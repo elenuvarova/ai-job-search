@@ -1,8 +1,20 @@
 import { Router } from "express";
 import { Op } from "sequelize";
 import { Job, Source, JobClassification, JobSkill } from "../models/index.js";
+import { getActiveCvTerms, scoreJobText } from "../rag/cvMatch.js";
 
 const router = Router();
+
+// Attributes returned for each classification, shared by both sort paths.
+const CLASS_ATTRS = [
+  "role_family", "seniority", "employment_type", "remote_type",
+  "job_post_language", "required_languages", "optional_languages",
+  "language_blocker", "language_match",
+];
+
+// Cap on how many (most-recent) filtered jobs get scored for the match sort —
+// keeps the in-memory scoring bounded; older jobs are rarely the top match anyway.
+const MAX_SCORED = 600;
 
 // GET /api/jobs
 // Filters: country, source, q (title search), language_match, employment_type,
@@ -33,20 +45,78 @@ router.get("/", async (req, res) => {
 
     const hasClassFilter = Object.keys(classWhere).length > 0;
 
+    const sourceInclude = (attrs) => ({ model: Source, where: sourceWhere, attributes: attrs });
+    const classInclude = (attrs) => ({
+      model: JobClassification,
+      required: hasClassFilter,
+      where: hasClassFilter ? classWhere : undefined,
+      attributes: attrs,
+    });
+
+    // ── Match sort: score the most-recent filtered jobs against the active CV,
+    // order by score, paginate in memory. Falls back to newest if no CV. ──
+    const wantMatch = req.query.sort === "match";
+    const minMatch = Math.max(0, parseInt(req.query.min_match) || 0);
+    const cvTerms = wantMatch ? await getActiveCvTerms() : null;
+
+    if (wantMatch && cvTerms) {
+      const candidates = await Job.findAll({
+        where: jobWhere,
+        include: [sourceInclude([]), classInclude([])],
+        attributes: ["id", "title", "description", "posted_at"],
+        order: [["posted_at", "DESC"]],
+        limit: MAX_SCORED,
+        subQuery: false,
+      });
+
+      let scored = candidates.map((j) => ({
+        id: j.id,
+        score: scoreJobText(cvTerms, `${j.title || ""} ${(j.description || "").slice(0, 3000)}`),
+        posted_at: j.posted_at,
+      }));
+      if (minMatch > 0) scored = scored.filter((s) => s.score >= minMatch);
+      scored.sort((a, b) => b.score - a.score || new Date(b.posted_at) - new Date(a.posted_at));
+
+      const total = scored.length;
+      const pageSlice = scored.slice(offset, offset + limit);
+      const ids = pageSlice.map((s) => s.id);
+
+      const rows = ids.length
+        ? await Job.findAll({
+            where: { id: ids },
+            include: [
+              { model: Source, attributes: ["key", "label", "attribution_html"] },
+              { model: JobClassification, attributes: CLASS_ATTRS },
+            ],
+          })
+        : [];
+
+      const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+      const scoreById = Object.fromEntries(pageSlice.map((s) => [s.id, s.score]));
+      const jobs = ids
+        .filter((id) => byId[id])
+        .map((id) => {
+          const j = byId[id].toJSON();
+          j.cv_match = scoreById[id];
+          return j;
+        });
+
+      return res.json({
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+        jobs,
+        sort: "match",
+      });
+    }
+
+    // ── Default: newest first ──
     const { count, rows } = await Job.findAndCountAll({
       where: jobWhere,
       include: [
-        { model: Source, where: sourceWhere, attributes: ["key", "label", "attribution_html"] },
-        {
-          model: JobClassification,
-          required: hasClassFilter,
-          where: hasClassFilter ? classWhere : undefined,
-          attributes: [
-            "role_family", "seniority", "employment_type", "remote_type",
-            "job_post_language", "required_languages", "optional_languages",
-            "language_blocker", "language_match",
-          ],
-        },
+        sourceInclude(["key", "label", "attribution_html"]),
+        classInclude(CLASS_ATTRS),
       ],
       order: [["posted_at", "DESC"]],
       limit,

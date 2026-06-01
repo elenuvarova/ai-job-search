@@ -237,6 +237,45 @@ button { cursor: pointer; font: inherit; }
 }
 .feed-stats strong { color: var(--text-1); font-weight: var(--weight-semibold); }
 
+/* ─── Sort bar ───────────────────────────────────────────────────── */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+.sort-bar-label {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+}
+.sort-pill {
+  font-size: var(--text-sm);
+  padding: 4px var(--space-3);
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sort-pill:hover { color: var(--text-1); border-color: var(--accent); }
+.sort-pill.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.sort-strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  margin-left: var(--space-1);
+}
+.sort-strong input { accent-color: var(--accent); cursor: pointer; }
+
 /* ─── Job card ───────────────────────────────────────────────────── */
 .job-card {
   display: block;                /* <Link> is inline by default */

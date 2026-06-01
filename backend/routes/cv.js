@@ -10,36 +10,7 @@ import { CvDocument, CvChunk, Job } from "../models/index.js";
 import { chunkText } from "../rag/chunk.js";
 import { embed } from "../rag/embed.js";
 import { sleep } from "../nlp/normalize.js";
-
-// Generic English/HR stop-words that carry no discriminative signal
-const STOP_WORDS = new Set([
-  "the","and","for","are","was","were","will","with","this","that","have",
-  "from","they","their","our","you","your","but","not","all","can","her",
-  "his","who","how","when","what","which","more","also","been","has","had",
-  "its","about","into","than","then","them","some","such","other","these",
-  "those","very","just","over","both","each","much","work","team","role",
-  "based","using","experience","years","strong","good","great","high",
-  "excellent","understanding","knowledge","skills","ability","looking",
-  "seeking","join","help","build","like","make","take","working","minimum",
-  "required","requirements","responsibilities","opportunity","position",
-  "candidate","ideal","preferred","able","across","within","between",
-  "under","well","including","following","related","relevant","similar",
-  "company","new","use","used","get","day","time","way","level","highly",
-  "field","areas","area","etc","please","apply","send","email","contact",
-  "offer","benefits","salary","bonus","vacation","holiday","insurance",
-  "pension","remote","office","hybrid","flexible","hours","week","month",
-  "full","part","contract","permanent","fixed","term","open","end",
-  "what","you","will","doing","about","come","what","your","ideal",
-]);
-
-function extractTerms(text) {
-  return new Set(
-    (text || "").toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .split(/\s+/)
-      .filter((t) => t.length >= 4 && !STOP_WORDS.has(t))
-  );
-}
+import { scoreJobText, getActiveCvTerms } from "../rag/cvMatch.js";
 
 const router = Router();
 const upload = multer({
@@ -116,16 +87,8 @@ router.get("/scores", async (req, res) => {
   if (!ids.length) return res.json({ scores: {} });
 
   try {
-    const doc = await CvDocument.findOne({ order: [["created_at", "DESC"]] });
-    if (!doc) return res.json({ scores: {} });
-
-    const chunks = await CvChunk.findAll({
-      where: { cv_document_id: doc.id },
-      attributes: ["chunk_text"],
-    });
-    if (!chunks.length) return res.json({ scores: {} });
-
-    const cvTerms = extractTerms(chunks.map((c) => c.chunk_text).join(" "));
+    const cvTerms = await getActiveCvTerms();
+    if (!cvTerms) return res.json({ scores: {} });
 
     const jobs = await Job.findAll({
       where: { id: ids },
@@ -134,10 +97,10 @@ router.get("/scores", async (req, res) => {
 
     const scores = {};
     for (const job of jobs) {
-      const jobText = `${job.title || ""} ${(job.description || "").slice(0, 3000)}`;
-      const jobTerms = extractTerms(jobText);
-      const hits = [...cvTerms].filter((t) => jobTerms.has(t)).length;
-      scores[job.id] = cvTerms.size ? Math.round((hits / cvTerms.size) * 100) : 0;
+      scores[job.id] = scoreJobText(
+        cvTerms,
+        `${job.title || ""} ${(job.description || "").slice(0, 3000)}`
+      );
     }
 
     res.json({ scores });

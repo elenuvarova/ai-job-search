@@ -92,6 +92,8 @@ export default function JobFeed() {
   const employment = searchParams.get("employment_type")|| "";
   const remote     = searchParams.get("remote_type")    || "";
   const page       = parseInt(searchParams.get("page")  || "1");
+  const sort       = searchParams.get("sort") === "match" ? "match" : "";
+  const strongOnly = searchParams.get("min_match") === "25";
 
   const hasFilters = q || country || langMatch || employment || remote;
 
@@ -110,6 +112,19 @@ export default function JobFeed() {
     setSearchParams({}, { replace: true });
   }, [setSearchParams]);
 
+  // Switch sort mode; leaving "match" also drops the strong-only filter.
+  const setSort = useCallback(
+    (value) => {
+      const next = new URLSearchParams(searchParams);
+      if (value) next.set("sort", value);
+      else next.delete("sort");
+      if (value !== "match") next.delete("min_match");
+      next.delete("page");
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
+
   useEffect(() => {
     const params = new URLSearchParams();
     if (country)    params.set("country", country);
@@ -117,6 +132,10 @@ export default function JobFeed() {
     if (employment) params.set("employment_type", employment);
     if (remote)     params.set("remote_type", remote);
     if (q)          params.set("q", q);
+    if (sort === "match") {
+      params.set("sort", "match");
+      if (strongOnly) params.set("min_match", "25");
+    }
     params.set("page", page);
     params.set("limit", "25");
 
@@ -128,7 +147,7 @@ export default function JobFeed() {
       .then(setResult)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [country, langMatch, employment, remote, q, page]);
+  }, [country, langMatch, employment, remote, q, page, sort, strongOnly]);
 
   // Auto-launch tour for first-time users (after data loads)
   useEffect(() => {
@@ -248,12 +267,42 @@ export default function JobFeed() {
           ))}
         </div>
 
+        {/* Sort */}
+        {hasCv && (
+          <div className="sort-bar">
+            <span className="sort-bar-label">Sort</span>
+            <button
+              className={`sort-pill ${sort !== "match" ? "is-active" : ""}`}
+              onClick={() => setSort("")}
+            >
+              Newest
+            </button>
+            <button
+              className={`sort-pill ${sort === "match" ? "is-active" : ""}`}
+              onClick={() => setSort("match")}
+            >
+              ★ Best match
+            </button>
+            {sort === "match" && (
+              <label className="sort-strong">
+                <input
+                  type="checkbox"
+                  checked={strongOnly}
+                  onChange={(e) => update("min_match", e.target.checked ? "25" : "")}
+                />
+                Strong only
+              </label>
+            )}
+          </div>
+        )}
+
         {/* Stats */}
         {result && (
           <div className="feed-stats">
             <strong>{result.total}</strong> jobs
             {langMatch === "good" && " · English-friendly"}
             {country && ` · ${country}`}
+            {result.sort === "match" && " · sorted by CV match"}
             {result.pages > 1 && ` · page ${page} of ${result.pages}`}
           </div>
         )}
@@ -274,7 +323,7 @@ export default function JobFeed() {
         )}
 
         {result?.jobs?.map((job, i) => (
-          <JobCard key={job.id} job={job} isFirst={i === 0} cvScore={scores[job.id]} />
+          <JobCard key={job.id} job={job} isFirst={i === 0} cvScore={job.cv_match ?? scores[job.id]} />
         ))}
 
         {result && result.pages > 1 && (

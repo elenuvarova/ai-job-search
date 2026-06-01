@@ -8,18 +8,22 @@ const ROLE_PATTERNS = [
   /generative.?ai/i, /foundation.?model/i,
 ];
 
-const LOCATION_DENY = [
-  /usa.?only/i, /us.?only/i, /canada.?only/i,
-  /australia.?only/i, /latin.?america.?only/i,
-];
+// Positive signal that a remote role is open to Europe/UK (or globally).
+const EU_OK = /\b(europe|emea|worldwide|global|anywhere|eu)\b|netherlands|belgium|luxembourg|united kingdom|\buk\b|germany|france|spain|italy|poland|ireland|portugal|nordics|benelux/i;
+// Clear non-EU regional restriction → drop (these can't be worked from Benelux).
+const NON_EU = /\b(usa?|united states|canada|australia|brazil|argentina|mexico|latam|latin america|apac|india|philippines|nigeria|emea excluded)\b/i;
 
 function isRelevant(position, tags) {
   const text = `${position} ${(tags || []).join(" ")}`;
   return ROLE_PATTERNS.some((p) => p.test(text));
 }
 
-function isDenied(location) {
-  return LOCATION_DENY.some((p) => p.test(location || ""));
+// Keep Europe/worldwide/unspecified-remote; drop roles restricted to a non-EU region.
+function isEuEligible(location) {
+  const loc = location || "";
+  if (EU_OK.test(loc)) return true;     // explicitly EU/UK/worldwide
+  if (NON_EU.test(loc)) return false;   // explicitly a non-EU region
+  return true;                          // unspecified → remote-anywhere, keep
 }
 
 export async function collectRemoteok(source) {
@@ -44,7 +48,7 @@ export async function collectRemoteok(source) {
     for (const job of items) {
       if (!job.id) continue;
       if (!isRelevant(job.position || "", job.tags)) continue;
-      if (isDenied(job.location)) continue;
+      if (!isEuEligible(job.location)) continue;
 
       jobs.push({
         source_id: source.id,
