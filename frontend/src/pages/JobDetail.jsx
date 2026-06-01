@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
 import SourceCredit from "../components/SourceCredit.jsx";
@@ -359,6 +359,10 @@ function SimilarJobs({ jobId }) {
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Go back through history so the filtered/sorted feed is restored exactly;
+  // fall back to a clean /jobs only when this page was opened directly (no in-app history).
+  const backToJobs = () => (location.key === "default" ? navigate("/jobs") : navigate(-1));
   const [job, setJob]           = useState(null);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
@@ -406,7 +410,7 @@ export default function JobDetail() {
       <Navbar />
 
       <div className="page">
-        <button className="back-btn" onClick={() => navigate("/jobs")}>
+        <button className="back-btn" onClick={backToJobs}>
           ← Back to jobs
         </button>
 
