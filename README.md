@@ -9,8 +9,9 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the design rationale an
 - **Collects** ML/Data/AI jobs daily from **14 free sources** into Postgres (see below). Benelux is covered fully; other EU countries + the UK are filtered to **remote or contract** roles.
 - **Classifies** each posting with rule-based NLP: role family, seniority, employment type, remote type, and a **language-requirement blocker** (is the local language a hard requirement or a nice-to-have?).
 - **Scores** each job against your uploaded CV (term-overlap match %, shown as a badge in the feed) and lets you **sort the feed by best match** ("Strong only" toggles to high-confidence matches).
-- **RAG assistant**: upload a CV (PDF/DOCX) → tailor it to a job, draft a cover letter, get gap analysis and interview prep (Gemini, with a Groq fallback).
-- **Tracks** applications (status, notes, follow-up) and shows a **Skill Gap Radar** across the market.
+- **Per-job skill gap**: on each job, shows which gazetteer skills your CV covers vs. the gaps.
+- **RAG assistant**: upload a CV (PDF/DOCX) → tailor it to a job, draft a cover letter, get gap analysis, interview prep, and an LLM **company interview brief** (Gemini, with a Groq fallback).
+- **Tracks** applications (status, notes, follow-up) with an **application funnel** (applied → interview → offer), plus a market-wide **Skill Gap Radar**.
 
 ## Stack
 

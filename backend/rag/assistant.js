@@ -152,3 +152,8 @@ async function callLlmPlainText(prompt) {
     return await callGroqText(prompt);
   }
 }
+
+// Generic plain-text generation (Gemini → Groq), reused beyond the CV actions.
+export async function generateText(prompt) {
+  return callLlmPlainText(prompt);
+}

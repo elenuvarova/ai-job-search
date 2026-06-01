@@ -11,6 +11,7 @@ import { chunkText } from "../rag/chunk.js";
 import { embed } from "../rag/embed.js";
 import { sleep } from "../nlp/normalize.js";
 import { scoreJobText, getActiveCvTerms } from "../rag/cvMatch.js";
+import { extractSkills } from "../nlp/skills.js";
 
 const router = Router();
 const upload = multer({
@@ -104,6 +105,37 @@ router.get("/scores", async (req, res) => {
     }
 
     res.json({ scores });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/cv/skill-gap/:jobId
+// Diffs the gazetteer skills found in a job against those found in the active CV.
+router.get("/skill-gap/:jobId", async (req, res) => {
+  try {
+    const job = await Job.findByPk(req.params.jobId, {
+      attributes: ["id", "title", "description"],
+    });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    const jobSkills = [
+      ...new Set(extractSkills(`${job.title} ${job.description || ""}`).map((s) => s.skill)),
+    ];
+
+    const doc = await CvDocument.findOne({
+      order: [["created_at", "DESC"]],
+      attributes: ["raw_text"],
+    });
+    if (!doc) {
+      return res.json({ has_cv: false, job_skills: jobSkills, matched: [], missing: jobSkills });
+    }
+
+    const cvSkills = new Set(extractSkills(doc.raw_text || "").map((s) => s.skill));
+    const matched = jobSkills.filter((s) => cvSkills.has(s));
+    const missing = jobSkills.filter((s) => !cvSkills.has(s));
+
+    res.json({ has_cv: true, job_skills: jobSkills, matched, missing });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

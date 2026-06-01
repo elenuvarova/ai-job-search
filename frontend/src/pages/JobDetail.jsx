@@ -223,6 +223,85 @@ function SaveButton({ jobId }) {
   );
 }
 
+function SkillGap({ jobId }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/cv/skill-gap/${jobId}`)
+      .then((r) => r.json())
+      .then(setData)
+      .catch(() => setData(null));
+  }, [jobId]);
+
+  if (!data || !data.has_cv) return null;
+  if (!data.matched.length && !data.missing.length) return null;
+
+  return (
+    <div className="detail-section">
+      <div className="detail-section-title">Your CV vs this job</div>
+      <div className="skillgap">
+        {data.matched.length > 0 && (
+          <div className="skillgap-row">
+            <span className="skillgap-label match">✓ You have ({data.matched.length})</span>
+            <div className="skills-grid">
+              {data.matched.map((s) => (
+                <span key={s} className="skill-chip match">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {data.missing.length > 0 && (
+          <div className="skillgap-row">
+            <span className="skillgap-label gap">✗ Gaps ({data.missing.length})</span>
+            <div className="skills-grid">
+              {data.missing.map((s) => (
+                <span key={s} className="skill-chip gap">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CompanyBrief({ jobId, company }) {
+  const [loading, setLoading] = useState(false);
+  const [brief, setBrief]     = useState(null);
+  const [error, setError]     = useState(null);
+
+  if (!company) return null;
+
+  async function generate() {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch(`/api/jobs/${jobId}/company-brief`, { method: "POST" });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Failed");
+      setBrief(data.result);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="detail-section">
+      <div className="detail-section-title">Company brief</div>
+      {!brief && !loading && (
+        <button className="rag-action-btn" onClick={generate}>
+          🏢 Brief me on {company}
+        </button>
+      )}
+      {loading && <div className="status-msg">Researching {company}…</div>}
+      {error && <div className="error-msg" style={{ marginTop: "var(--space-3)" }}>{error}</div>}
+      {brief && <pre className="rag-result-text">{brief}</pre>}
+    </div>
+  );
+}
+
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -332,6 +411,9 @@ export default function JobDetail() {
           </div>
         )}
 
+        {/* CV ↔ job skill gap (only renders when a CV is uploaded) */}
+        <SkillGap jobId={id} />
+
         {/* Description — expandable */}
         {job.description && (
           <div className="detail-section">
@@ -346,6 +428,9 @@ export default function JobDetail() {
             )}
           </div>
         )}
+
+        {/* Company brief (LLM, no CV needed) */}
+        <CompanyBrief jobId={id} company={job.company} />
 
         {/* RAG Assistant */}
         <RagPanel jobId={id} />

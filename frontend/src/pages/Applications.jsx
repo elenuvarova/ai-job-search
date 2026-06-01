@@ -15,7 +15,10 @@ const STATUS_CONFIG = {
   archived:  { label: "Archived",   cls: "status-archived" },
 };
 
-const COUNTRY_FLAGS = { BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺" };
+const COUNTRY_FLAGS = {
+  BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺",
+  GB: "🇬🇧", DE: "🇩🇪", FR: "🇫🇷", ES: "🇪🇸", IT: "🇮🇹", AT: "🇦🇹", PL: "🇵🇱",
+};
 
 function relativeTime(iso) {
   if (!iso) return "—";
@@ -110,6 +113,13 @@ export default function Applications() {
     return acc;
   }, {});
 
+  // Funnel (from current statuses; a rejected app still counts as "submitted").
+  const submitted    = counts.applied + counts.interview + counts.offer + counts.rejected;
+  const interviewing = counts.interview + counts.offer;
+  const offers       = counts.offer;
+  const interviewRate = submitted ? Math.round((interviewing / submitted) * 100) : 0;
+  const offerRate     = submitted ? Math.round((offers / submitted) * 100) : 0;
+
   return (
     <div>
       <Navbar />
@@ -120,6 +130,30 @@ export default function Applications() {
             <strong>{apps.length}</strong> saved
           </span>
         </div>
+
+        {/* Funnel */}
+        {submitted > 0 && (
+          <div className="funnel">
+            <div className="funnel-row">
+              <div className="funnel-stage">
+                <div className="funnel-count">{submitted}</div>
+                <div className="funnel-label">Applied</div>
+              </div>
+              <span className="funnel-arrow">→</span>
+              <div className="funnel-stage">
+                <div className="funnel-count">{interviewing}</div>
+                <div className="funnel-label">Interview</div>
+                <div className="funnel-rate">{interviewRate}%</div>
+              </div>
+              <span className="funnel-arrow">→</span>
+              <div className="funnel-stage">
+                <div className="funnel-count">{offers}</div>
+                <div className="funnel-label">Offer</div>
+                <div className="funnel-rate">{offerRate}%</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Status filter tabs */}
         <div className="status-tabs">

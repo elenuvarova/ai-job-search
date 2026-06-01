@@ -2,10 +2,55 @@ import { Router } from "express";
 import { Job, JobClassification, JobSkill, CvDocument } from "../models/index.js";
 import { embed } from "../rag/embed.js";
 import { retrieveTopChunks } from "../rag/retrieve.js";
-import { runAssistant } from "../rag/assistant.js";
+import { runAssistant, generateText } from "../rag/assistant.js";
 
 const router = Router();
 const ACTIONS = ["tailor-cv", "cover-letter", "interview-prep"];
+
+// In-memory cache keyed by company name — briefs are company-level and repeat
+// across jobs, so this avoids re-spending LLM quota. Resets on restart ($0).
+const briefCache = new Map();
+
+function companyBriefPrompt(job) {
+  return `
+You are a concise company researcher helping a candidate prepare for a job interview. Use British English.
+
+Company: ${job.company}
+Role being considered: ${job.title}
+Location: ${job.location_raw || job.country || "—"}
+
+Write a tight, scannable briefing for the candidate, using these sections with short bullets:
+1. **What they do** — 1–2 sentences on the product and business model.
+2. **Scale & stage** — startup / scale-up / enterprise, plus any widely-known facts.
+3. **For an ML/Data/AI candidate** — likely tech stack or data-culture signals relevant to this role.
+4. **Smart questions to ask** — 3 questions that show genuine research.
+5. **Watch-outs** — one thing to verify or a possible red flag.
+
+Keep it under 250 words. If you are not certain about a specific fact, say so plainly rather than inventing it. Do NOT fabricate funding amounts, headcounts, valuations, or recent news.
+`.trim();
+}
+
+// POST /api/jobs/:jobId/company-brief — LLM "before you interview" one-pager.
+// Defined before the generic /:jobId/:action route; needs no CV.
+router.post("/:jobId/company-brief", async (req, res) => {
+  try {
+    const job = await Job.findByPk(req.params.jobId, {
+      attributes: ["company", "title", "country", "location_raw"],
+    });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+    if (!job.company) return res.status(400).json({ error: "No company name for this job" });
+
+    const key = job.company.toLowerCase();
+    if (briefCache.has(key)) return res.json({ result: briefCache.get(key), cached: true });
+
+    const brief = await generateText(companyBriefPrompt(job));
+    briefCache.set(key, brief);
+    res.json({ result: brief });
+  } catch (err) {
+    console.error("company-brief error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // POST /api/jobs/:id/:action
 // action = tailor-cv | cover-letter | interview-prep
