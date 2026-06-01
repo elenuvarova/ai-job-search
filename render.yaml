@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ai-workshop-web
+    name: benelux-job-scout
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
