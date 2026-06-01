@@ -2,7 +2,24 @@
 
 > A personal job-search intelligence tool for ML Engineer / Data Scientist / AI Engineer roles across **Belgium, Netherlands, and Luxembourg**. It collects vacancies from free sources, normalizes messy multilingual job data, detects employment type and **language blockers** (Dutch/French/German/Luxembourgish), scores each role against your CV, and helps you prioritize and tailor applications.
 >
-> **Hard constraint: $0 to build and $0 to run, indefinitely, for a single user.** This plan was written after researching every API, host, and AI provider against current (2026) free-tier limits. Every component below is confirmed free.
+> **Hard constraint: $0 to build and $0 to run, for a single user.** Every component was chosen against free-tier limits. Free tiers move — these were last verified **2026-06-01**, and one has since tightened: Gemini cut its free request quota in Dec 2025 (see §2 / §12). The design still runs at $0; the headroom is just smaller than first written.
+
+---
+
+## What actually shipped (built vs planned)
+
+This document is the original design. The codebase has since evolved — this table is the source of truth for what exists today (2026-06).
+
+| Area | Planned here | Actually shipped |
+|---|---|---|
+| **Job sources** | 5 (Adzuna, Arbeitnow, Remotive, Muse, Greenhouse) | **11**: + RemoteOK, Lever, **EURES** (native LU/BE/NL), Recruitee, SmartRecruiters, HN "Who's Hiring" |
+| **Embeddings** | Local `transformers.js` (`multilingual-e5-small`, 384-dim) | **Gemini `gemini-embedding-001`** API, 768-dim (`backend/rag/embed.js`). The local model was never added. |
+| **Fit scoring** | Weighted formula (35% skill · 20% role · …) + apply-priority tiers | **CV-match % via term overlap** (`backend/routes/cv.js`, `/api/cv/scores`) — no weighted formula or priority tiers yet |
+| **Data models** | incl. `SearchProfile`, `JobScore` | Not built. Shipped: Source, Job, JobClassification, JobSkill, Application, CvDocument, CvChunk |
+| **API routers** | profiles, scoring, jobs sub-routes (save/hide/apply) | jobs, collect, **classify**, cv, rag, **applications**, **analytics** (no profiles router) |
+| **Frontend** | "no router for v1" | React Router + pages JobFeed/JobDetail/Applications/**Skills** + guided Tour + theme toggle |
+| **Deploy** | Render web service + Neon Postgres + GitHub Actions cron | As planned (Render web + Neon + Actions) |
+| **Cross-source dedup** | "keep richest description, merge sources" | App-level skip on `dedupe_hash` in `scripts/collect.js` (store-once, no merge) |
 
 ---
 
@@ -17,12 +34,12 @@
 | **Vector storage (v1)** | **Embeddings as a JSON column + brute-force cosine in Node** | A single-user scout has a small corpus (hundreds–few-thousand vectors). Brute-force cosine is sub-millisecond and works **identically on SQLite and Postgres** with no extension. `pgvector`/HNSW on Neon is the documented scale-up path, not an MVP need. |
 | **Scheduled collector** | **GitHub Actions cron** (public repo) running a Node script against Neon | Render Cron is **paid-only**. GitHub Actions in a public repo = **unlimited free minutes**, can run long jobs, survives the web service sleeping. |
 | **Web service** | **Render free web service** (existing Dockerfile/`render.yaml`) | Simplest one-click Blueprint deploy. Accept ~60 s cold start after 15 min idle (fine for a personal tool). |
-| **LLM (only where needed)** | **Gemini 2.5 Flash** primary, **Groq Llama 3.3 70B** fallback | Gemini free: **1,500 req/day**, 1 M-token context, multilingual EN/NL/FR/DE, native JSON output. Groq = different vendor for true redundancy. Behind a thin provider abstraction so swaps are config-only. |
-| **Embeddings** | **Local `transformers.js`** (`Xenova/multilingual-e5-small`, 384-dim), offline | $0, **no quota, no vendor risk**, runs server-side in Node via ONNX. Isolates our one real LLM bottleneck (generation) from indexing. |
+| **LLM (only where needed)** | **Gemini 2.5 Flash** primary, **Groq Llama 3.3 70B** fallback | Gemini free tier was 1,500 req/day when planned; **Google cut it to ~250–500 req/day in Dec 2025**. Still ample for one user since Tasks 1–5 are rule-based (zero calls). Groq (1,000 req/day, confirmed) is the practical workhorse for the LLM tail. Behind a thin provider abstraction so swaps are config-only. |
+| **Embeddings** | **Gemini `gemini-embedding-001`** (768-dim) via API *(shipped; the planned local `transformers.js` was never added)* | Multilingual EN/NL/FR/DE. **Note:** the predecessor `text-embedding-004` was shut down 2026-01-14 — migrated to `gemini-embedding-001`. This spends a (separate) free quota, unlike the originally-planned offline model; revisit local embeddings if it ever bites. |
 | **NLP strategy** | **Rule-based first, LLM only for the ambiguous tail** | 5 of 7 tasks are reliably rule-based using the doc's existing multilingual keyword lists → near-zero API spend at steady state. |
 
-**Sources to use in v1 (free, ranked):** Adzuna → Arbeitnow → Remotive → The Muse → curated Greenhouse boards.
-**Deferred:** VDAB (needs signed partner agreement), ADEM/Luxembourg (no public listing API). LinkedIn/Indeed scraping: **out of scope** (ToS).
+**Sources shipped (free, all zero-cost):** Adzuna · **EURES** (native LU/BE/NL) · Arbeitnow · Remotive · The Muse · RemoteOK · Greenhouse · Lever · Recruitee · SmartRecruiters · HN "Who's Hiring". *(Planned v1 was the first five; the rest were added later.)*
+**Deferred / confirmed unavailable:** VDAB (needs signed partner agreement), ADEM/`data.public.lu` (open data is skills *statistics*, not vacancies), UWV/werk.nl (no API), Indeed publisher API (dead since 2020), Moovijob/jobs.lu (bot-blocked). LinkedIn/Indeed scraping: **out of scope** (ToS).
 
 ---
 
@@ -63,17 +80,18 @@
 | Web service + API + UI | Render free web service | 750 instance-hrs/mo; sleeps after 15 min (~60 s cold start) | $0 |
 | Database | Neon Free | 0.5 GB/project, never expires, ~ms resume | $0 |
 | Scheduled collector | GitHub Actions (public repo) | Unlimited minutes; min 5-min interval | $0 |
-| Job data — Adzuna | REST + free key (instant) | ~250 calls/day | $0 |
-| Job data — Arbeitnow | Zero-auth feed | generous; poll ~daily | $0 |
-| Job data — Remotive | Zero-auth feed | ~4 GETs/day (cache once/day) | $0 |
+| Job data — Adzuna | REST + free key (instant) | ~250 calls/day *(observed, not documented)* | $0 |
+| Job data — EURES | Zero-auth JSON search API | none published; poll politely ~daily | $0 |
+| Job data — Arbeitnow / Remotive / RemoteOK | Zero-auth feeds | generous; cache once/day | $0 |
 | Job data — The Muse | Free key | 3,600 req/hr | $0 |
-| Job data — Greenhouse | Public board API | polite ~1/company/day | $0 |
+| Job data — Greenhouse / Lever / Recruitee / SmartRecruiters | Public board APIs | per-company; polite ~daily | $0 |
+| Job data — HN "Who's Hiring" | Algolia HN API (zero-auth) | generous | $0 |
 | Language detect, employment, role, skills | Rule-based (offline) | unlimited | $0 |
-| Embeddings | `transformers.js` local | unlimited, offline | $0 |
-| LLM (scoring rationale + RAG) | Gemini 2.5 Flash | 1,500 req/day | $0 |
+| Embeddings | Gemini `gemini-embedding-001` (API) | shares the Gemini free quota | $0 |
+| LLM (classification tail + RAG) | Gemini 2.5 Flash | **~250–500 req/day** (cut from 1,500 in Dec 2025) | $0 |
 | LLM fallback | Groq Llama 3.3 70B | ~1,000 req/day | $0 |
 
-**Steady-state LLM budget:** Tasks 1–5 cost **zero** API calls. Only the low-confidence classification tail, fit-score rationales, and RAG chats consume Gemini's 1,500/day — far more than a single user needs.
+**Steady-state LLM budget:** Tasks 1–5 cost **zero** API calls. Only the low-confidence classification tail and RAG chats consume the Gemini/Groq quotas — still well above what a single user needs even after the Dec-2025 cut, with Groq's 1,000/day as the fallback workhorse.
 
 ---
 
@@ -107,15 +125,14 @@ JobClassification job_id, role_family, role_confidence, seniority, employment_ty
                   required_languages (JSON), optional_languages (JSON),
                   language_blocker (bool), classification_method (rule|llm), evidence (JSON)
 JobSkill          job_id, skill, skill_type (matched|gap), confidence
-SearchProfile     id, name, target_roles (JSON), countries (JSON), cities (JSON),
-                  employment_types (JSON), accepted_languages (JSON), blocked_languages (JSON),
-                  remote_preferences (JSON), min_fit_score
-JobScore          job_id, profile_id, fit_score, skill_match_score, language_score,
-                  seniority_score, location_score, employment_score, apply_priority,
-                  reasons (JSON), gaps (JSON)
+SearchProfile     [PLANNED — not built] id, name, target_roles, countries, cities,
+                  employment_types, accepted_languages, blocked_languages, ...
+JobScore          [PLANNED — not built] job_id, profile_id, fit_score, ... apply_priority
+                  (today's scoring is term-overlap CV-match %, computed on the fly in
+                   routes/cv.js — not persisted)
 Application       id, job_id, status, notes, cv_version, cover_letter, applied_at, follow_up_at
 CvDocument        id, label, raw_text, created_at
-CvChunk           id, cv_document_id, chunk_text, embedding (JSON float[384]), token_count
+CvChunk           id, cv_document_id, chunk_text, embedding (JSON float[768])
 ```
 
 **Dedup:** `dedupe_hash = sha1(normalize(title) + normalize(company) + country)`; on collision, keep the richest description and merge sources. Unique index on `(source_id, source_job_id)` prevents intra-source dupes.
@@ -139,7 +156,7 @@ Pipeline order (collector runs steps 1–11 per job; the API runs 10–12 on dem
 | 7 | Remote type | **Rule-based** | keyword (remote/hybrid/onsite/thuiswerk/télétravail) |
 | 8 | Location → country/city | **Rule-based** | Benelux city→country map + source country code |
 | 9 | Dedupe | **Rule-based** | dedupe_hash + fuzzy title match |
-| 10 | Embed (CV + JD) | **Local model** | `transformers.js` multilingual-e5-small (384-d) |
+| 10 | Embed (CV chunks) | **Gemini API** | `gemini-embedding-001` (768-d) — *planned local model not built* |
 | 11 | Fit score | **Features + LLM rationale** | deterministic features → Gemini for explained score |
 | 12 | RAG answers | **LLM** | retrieve chunks (cosine) → Gemini/Groq |
 
@@ -159,7 +176,7 @@ First pass is regex proximity (language term within N tokens of a requirement mo
 
 ## 6. RAG assistant (free)
 
-- **Index** (offline, $0): chunk CV + portfolio + saved JDs → embed with local `multilingual-e5-small` → store `embedding` JSON on `CvChunk` / a `JobChunk`.
+- **Index** ($0): chunk the uploaded CV → embed with Gemini `gemini-embedding-001` (768-dim) → store `embedding` JSON on `CvChunk`. *(The plan originally called for an offline local model; the API model shipped instead.)*
 - **Retrieve:** cosine similarity in Node over the small corpus (no pgvector needed at MVP scale).
 - **Generate:** Gemini 2.5 Flash (Groq fallback) for: tailor CV to a job, draft cover letter, explain gaps, interview prep, compare jobs, "is this language requirement a real blocker?"
 - Pass **structured features + top-k chunks**, not raw documents, to stay well inside free token limits.
@@ -270,13 +287,13 @@ render.yaml                 # databases block removed; DATABASE_URL = Neon (secr
 
 ## 12. Risks, limits & when you'd ever pay
 
-- **Free LLM daily caps** (Gemini 1,500/day) are the real ceiling — mitigated by doing Tasks 1–5 rule-based (zero API). A single user won't approach the cap.
+- **Free LLM daily caps** (Gemini ~250–500/day since the Dec-2025 cut; Groq ~1,000/day) are the real ceiling — mitigated by doing Tasks 1–5 rule-based (zero API) and falling back to Groq. A single user still won't approach the cap.
 - **Render cold start** (~60 s after idle) — acceptable for personal use; optional 10-min keep-alive ping if it annoys you.
 - **GitHub Actions schedules** are best-effort (can lag/skip) and auto-disable after 60 days idle — off-peak minute + daily state commit handle both.
 - **Luxembourg coverage** is thin (Adzuna-only for live jobs) — enrich with LU company Greenhouse slugs.
 - **Attribution is mandatory** for Adzuna/Arbeitnow/Remotive — build the credit components in Phase 3, not as an afterthought.
 - **Rule-based tail** (~5–10% novel titles, negated language phrasing) — exactly the cases routed to the LLM; don't over-engineer regex for them.
-- **You'd only pay if:** you scale past ~1,500 LLM calls/day (Gemini paid is cheap), need guaranteed quality (Claude/GPT as a quality tier), or the corpus outgrows brute-force cosine (Neon pgvector, still free). None apply to a single-user MVP — **it runs at $0 indefinitely.**
+- **You'd only pay if:** you exhaust both the Gemini and Groq free daily quotas (paid Gemini is cheap), need guaranteed quality (Claude/GPT as a quality tier), or the corpus outgrows brute-force cosine (Neon pgvector, still free). None apply to a single-user MVP — **it runs at $0 at today's free tiers** (re-verify periodically; free tiers move, as Gemini's Dec-2025 cut showed).
 
 ---
 
@@ -288,4 +305,4 @@ render.yaml                 # databases block removed; DATABASE_URL = Neon (secr
 4. **Gemini:** get a free AI Studio key → add `GEMINI_API_KEY`.
 5. Begin **Phase 1**: `Source`/`Job` models + Adzuna collector + `scripts/collect.js` + the GitHub Action.
 
-Everything above is confirmed against current free tiers. Ready to start building Phase 0–1 on request.
+Phases 0–5 are built and running. Free-tier numbers were last verified **2026-06-01** — re-check periodically, since they move (Gemini's Dec-2025 quota cut is the cautionary example).
