@@ -1207,40 +1207,32 @@ button { cursor: pointer; font: inherit; }
 }
 .save-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ─── Skill Gap Radar ────────────────────────────────────────────── */
-.skill-radar { display: flex; flex-direction: column; gap: var(--space-3); }
-
-.skill-radar-row {
-  display: grid;
-  grid-template-columns: 140px 1fr 80px;
-  align-items: center;
-  gap: var(--space-3);
+/* ─── Skill Gap Radar — interactive graph ────────────────────────── */
+.skill-graph-hint { color: var(--text-3); font-size: var(--text-sm); margin-bottom: var(--space-2); }
+.skill-graph {
+  width: 100%;
+  height: auto;
+  max-height: 72vh;
+  display: block;
+  touch-action: none;   /* dragging a bubble must not scroll the page */
+  user-select: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
-.skill-radar-name {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  color: var(--text-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.skill-node { cursor: grab; }
+.skill-node:active { cursor: grabbing; }
+.skill-node-circle {
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  transition: stroke-width 0.15s;
 }
-.skill-radar-bar-track {
-  background: var(--border);
-  border-radius: 3px;
-  height: 8px;
-  overflow: hidden;
+.skill-node:hover .skill-node-circle { stroke-width: 3; }
+.skill-node-label {
+  fill: #fff;
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  text-anchor: middle;
+  pointer-events: none;
 }
-.skill-radar-bar-fill {
-  background: var(--accent);
-  height: 8px;
-  border-radius: 3px;
-  transition: width 0.5s ease;
-  min-width: 3px;
-}
-.skill-radar-stat {
-  font-size: var(--text-sm);
-  color: var(--text-2);
-  text-align: right;
-  white-space: nowrap;
-}
-.skill-radar-pct { font-size: var(--text-xs); color: var(--text-3); }
