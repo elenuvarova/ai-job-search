@@ -18,6 +18,7 @@ export default function Navbar({ onHelpClick }) {
       </Link>
       <div className="nav-links">
         {navLink("/jobs", "Jobs")}
+        {navLink("/analyze", "Analyze")}
         {navLink("/applications", "Tracker")}
         {navLink("/skills", "Skills")}
       </div>
