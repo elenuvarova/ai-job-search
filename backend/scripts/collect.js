@@ -108,6 +108,22 @@ async function saveJobs(rawJobs) {
 
   for (const jobData of rawJobs) {
     try {
+      // Cross-source dedup: dedupe_hash = sha1(title|company|country), so the same
+      // posting surfaced by several sources (e.g. a company board + RemoteOK + HN)
+      // is stored once. Done in app code rather than a unique index so it works on
+      // existing data without a migration. (Re-runs of the same source are also
+      // caught here, before the findOrCreate on source_job_id.)
+      if (jobData.dedupe_hash) {
+        const dup = await Job.findOne({
+          where: { dedupe_hash: jobData.dedupe_hash },
+          attributes: ["id"],
+        });
+        if (dup) {
+          skipped++;
+          continue;
+        }
+      }
+
       const [, wasCreated] = await Job.findOrCreate({
         where: { source_id: jobData.source_id, source_job_id: jobData.source_job_id },
         defaults: jobData,
@@ -115,9 +131,8 @@ async function saveJobs(rawJobs) {
       if (wasCreated) created++;
       else skipped++;
     } catch (err) {
-      // Unique constraint on dedupe_hash from another source — silent skip
       if (err.name === "SequelizeUniqueConstraintError") {
-        skipped++;
+        skipped++; // raced insert of the same (source_id, source_job_id)
       } else {
         console.error(`  Save error: ${err.message}`);
       }
