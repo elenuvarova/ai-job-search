@@ -4,11 +4,11 @@ import { stripHtml, dedupeHash, sleep } from "../nlp/normalize.js";
 // 404s are handled gracefully — add/remove tokens freely.
 const COMPANIES = [
   // Belgium
-  { token: "collibra",   name: "Collibra",   country: "BE", city: "Brussels" },
-  { token: "showpad",    name: "Showpad",     country: "BE", city: "Ghent" },
-  { token: "teamleader", name: "Teamleader",  country: "BE", city: "Ghent" },
-  { token: "datacamp",   name: "DataCamp",    country: "BE", city: "Brussels" },
-  { token: "silverfin",  name: "Silverfin",   country: "BE", city: "Ghent" },
+  { token: "collibra",    name: "Collibra",    country: "BE", city: "Brussels" },
+  { token: "showpad",     name: "Showpad",     country: "BE", city: "Ghent" },
+  { token: "teamleader",  name: "Teamleader",  country: "BE", city: "Ghent" },
+  { token: "datacamp",    name: "DataCamp",    country: "BE", city: "Brussels" },
+  { token: "silverfin",   name: "Silverfin",   country: "BE", city: "Ghent" },
   // Netherlands
   { token: "adyen",       name: "Adyen",       country: "NL", city: "Amsterdam" },
   { token: "mollie",      name: "Mollie",      country: "NL", city: "Amsterdam" },
@@ -20,6 +20,21 @@ const COMPANIES = [
   { token: "tomtom",      name: "TomTom",      country: "NL", city: "Amsterdam" },
   { token: "booking",     name: "Booking.com", country: "NL", city: "Amsterdam" },
   { token: "wetransfer",  name: "WeTransfer",  country: "NL", city: "Amsterdam" },
+  { token: "elastic",     name: "Elastic",     country: "NL", city: "Amsterdam" },
+  { token: "miro",        name: "Miro",        country: "NL", city: "Amsterdam" },
+  { token: "bol",         name: "bol.com",     country: "NL", city: "Utrecht" },
+  { token: "recruitee",   name: "Recruitee",   country: "NL", city: "Amsterdam" },
+  // EU remote — strong ML/Data hiring, accessible from Benelux
+  { token: "personio",    name: "Personio",    country: null, city: null },
+  { token: "contentful",  name: "Contentful",  country: null, city: null },
+  { token: "pleo",        name: "Pleo",        country: null, city: null },
+  { token: "sumup",       name: "SumUp",       country: null, city: null },
+  { token: "typeform",    name: "Typeform",    country: null, city: null },
+  { token: "algolia",     name: "Algolia",     country: null, city: null },
+  { token: "n26",         name: "N26",         country: null, city: null },
+  { token: "klarna",      name: "Klarna",      country: null, city: null },
+  { token: "zendesk",     name: "Zendesk",     country: null, city: null },
+  { token: "datadog",     name: "Datadog",     country: null, city: null },
 ];
 
 const ROLE_PATTERNS = [
