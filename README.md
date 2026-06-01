@@ -10,7 +10,9 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the design rationale an
 - **Classifies** each posting with rule-based NLP: role family, seniority, employment type, remote type, and a **language-requirement blocker** (is the local language a hard requirement or a nice-to-have?).
 - **Scores** each job against your uploaded CV (term-overlap match %, shown as a badge in the feed) and lets you **sort the feed by best match** ("Strong only" toggles to high-confidence matches).
 - **Per-job skill gap**: on each job, shows which gazetteer skills your CV covers vs. the gaps.
-- **RAG assistant**: upload a CV (PDF/DOCX) → tailor it to a job, draft a cover letter, get gap analysis, interview prep, and an LLM **company interview brief** (Gemini, with a Groq fallback).
+- **RAG assistant**: upload a CV (PDF/DOCX) → tailor it to a job, draft a cover letter, get gap analysis, interview prep, an LLM **company interview brief**, or a one-click **Apply-kit** (all of the above bundled to Markdown) — Gemini, with a Groq fallback.
+- **Analyze any job**: paste an arbitrary JD — including LinkedIn/Indeed roles we don't collect — to classify it + score it against your CV + see skill gaps. Nothing is stored.
+- **Semantic search & chat**: a "✨ Smart" toggle ranks the feed by meaning (embeddings), each job shows **Similar roles**, and an **Ask** page answers natural-language questions ("remote LLM roles that don't need Dutch and match my CV") grounded in the collected jobs.
 - **Tracks** applications (status, notes, follow-up) with an **application funnel** (applied → interview → offer), plus a market-wide **Skill Gap Radar**.
 
 ## Stack
