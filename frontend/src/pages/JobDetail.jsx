@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
 import SourceCredit from "../components/SourceCredit.jsx";
+import { SkeletonFeed, ErrorState } from "../components/States.jsx";
 
 const COUNTRY_FLAGS = {
   BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺",
@@ -38,6 +39,7 @@ const ACTION_LABELS = {
 function RagPanel({ jobId }) {
   const [cv, setCv]               = useState(undefined); // undefined = loading, null = none
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const [action, setAction]       = useState(null);
   const [ragLoading, setRagLoading] = useState(false);
   const [ragResult, setRagResult] = useState(null);
@@ -56,6 +58,7 @@ function RagPanel({ jobId }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setUploadError(null);
     const fd = new FormData();
     fd.append("cv", file);
     try {
@@ -65,7 +68,7 @@ function RagPanel({ jobId }) {
       setCv(data);
       setRagResult(null);
     } catch (err) {
-      alert(err.message);
+      setUploadError(err.message);
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -137,6 +140,7 @@ function RagPanel({ jobId }) {
               hidden
             />
           </label>
+          {uploadError && <div className="inline-error">{uploadError}</div>}
         </div>
       ) : (
         <div>
@@ -359,18 +363,37 @@ export default function JobDetail() {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     fetch(`/api/jobs/${id}`)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setJob)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, reloadKey]);
 
-  if (loading) return <><Navbar /><div className="page" style={{ paddingTop: "2rem" }}><div className="status-msg">Loading…</div></div></>;
-  if (error)   return <><Navbar /><div className="page" style={{ paddingTop: "2rem" }}><div className="error-msg">Error: {error}</div></div></>;
-  if (!job)    return null;
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="page" style={{ paddingTop: "1.5rem" }}><SkeletonFeed rows={3} /></div>
+      </>
+    );
+  }
+  if (error) {
+    return (
+      <>
+        <Navbar />
+        <div className="page" style={{ paddingTop: "1.5rem" }}>
+          <ErrorState message={error} onRetry={() => setReloadKey((k) => k + 1)} />
+        </div>
+      </>
+    );
+  }
+  if (!job) return null;
 
   const c            = job.JobClassification;
   const skills       = job.JobSkills || [];

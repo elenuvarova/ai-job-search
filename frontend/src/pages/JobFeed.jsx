@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
 import SourceCredit from "../components/SourceCredit.jsx";
 import Tour, { shouldShowTour } from "../components/Tour.jsx";
+import { SkeletonFeed, ErrorState, EmptyState } from "../components/States.jsx";
 
 const COUNTRY_FLAGS = {
   BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺",
@@ -22,12 +23,14 @@ function relativeTime(iso) {
 
 function CvUploadBanner({ onUploaded }) {
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
   const fileRef = useRef();
 
   async function handle(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setError(null);
     const fd = new FormData();
     fd.append("cv", file);
     try {
@@ -36,7 +39,7 @@ function CvUploadBanner({ onUploaded }) {
       if (!r.ok) throw new Error(data.error || "Upload failed");
       onUploaded();
     } catch (err) {
-      alert(err.message);
+      setError(err.message);
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -48,6 +51,7 @@ function CvUploadBanner({ onUploaded }) {
       <span className="cv-banner-text">
         📄 Upload your CV to rank every job by how well it matches you.
       </span>
+      {error && <div className="inline-error">{error}</div>}
       <label className="rag-upload-btn">
         {uploading ? "Analysing CV…" : "Upload CV (PDF or DOCX)"}
         <input
@@ -128,6 +132,7 @@ export default function JobFeed() {
   const [showTour, setShowTour] = useState(false);
   const [hasCv, setHasCv]     = useState(null); // null=unknown, false=none, true=yes
   const [scores, setScores]   = useState({});
+  const [reloadKey, setReloadKey] = useState(0);
 
   const q          = searchParams.get("q")              || "";
   const country    = searchParams.get("country")        || "";
@@ -227,7 +232,7 @@ export default function JobFeed() {
       .catch(onError)
       .finally(onDone);
     return () => { active = false; ctrl.abort(); };
-  }, [country, langMatch, employment, remote, q, page, sort, strongOnly, smart]);
+  }, [country, langMatch, employment, remote, q, page, sort, strongOnly, smart, reloadKey]);
 
   // Auto-launch tour for first-time users (after data loads)
   useEffect(() => {
@@ -414,26 +419,28 @@ export default function JobFeed() {
           <div className="status-msg">{result.note}</div>
         )}
 
-        {loading && <div className="status-msg">Loading…</div>}
-        {error   && <div className="error-msg">Error: {error}</div>}
+        {loading && <SkeletonFeed />}
 
-        {!loading && !error && result?.jobs?.length === 0 && (
-          <div className="empty-state">
-            <div className="empty-icon">🔍</div>
-            <div className="empty-title">No jobs match these filters</div>
-            {hasFilters && (
-              <button className="empty-clear" onClick={clearAll}>
-                Clear all filters
-              </button>
-            )}
-          </div>
+        {!loading && error && (
+          <ErrorState message={error} onRetry={() => setReloadKey((k) => k + 1)} />
         )}
 
-        {result?.jobs?.map((job, i) => (
+        {!loading && !error && result?.jobs?.length === 0 && (
+          <EmptyState
+            title="No jobs match these filters"
+            action={
+              hasFilters && (
+                <button className="empty-clear" onClick={clearAll}>Clear all filters</button>
+              )
+            }
+          />
+        )}
+
+        {!loading && !error && result?.jobs?.map((job, i) => (
           <JobCard key={job.id} job={job} isFirst={i === 0} cvScore={job.cv_match ?? scores[job.id]} />
         ))}
 
-        {result && result.pages > 1 && (
+        {!loading && !error && result && result.pages > 1 && (
           <div className="pagination">
             <button disabled={page <= 1} onClick={() => update("page", String(page - 1))}>
               ← Prev
