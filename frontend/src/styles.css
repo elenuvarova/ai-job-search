@@ -237,6 +237,21 @@ button { cursor: pointer; font: inherit; }
 }
 .feed-stats strong { color: var(--text-1); font-weight: var(--weight-semibold); }
 
+/* ─── CV upload banner (feed) ────────────────────────────────────── */
+.cv-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+.cv-banner-text { color: var(--text-1); font-size: var(--text-sm); }
+
 /* ─── Sort bar ───────────────────────────────────────────────────── */
 .sort-bar {
   display: flex;

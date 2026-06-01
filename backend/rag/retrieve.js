@@ -8,6 +8,7 @@ export async function retrieveTopChunks(cvDocumentId, queryEmbedding, k = 5) {
   });
 
   return chunks
+    .filter((c) => Array.isArray(c.embedding) && c.embedding.length)
     .map((c) => ({
       text: c.chunk_text,
       score: cosineSim(queryEmbedding, c.embedding),

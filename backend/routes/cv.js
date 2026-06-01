@@ -8,8 +8,7 @@ const pdfParse = require("pdf-parse");
 const mammoth = require("mammoth");
 import { CvDocument, CvChunk, Job } from "../models/index.js";
 import { chunkText } from "../rag/chunk.js";
-import { embed } from "../rag/embed.js";
-import { sleep } from "../nlp/normalize.js";
+import { embedBatch } from "../rag/embed.js";
 import { scoreJobText, getActiveCvTerms } from "../rag/cvMatch.js";
 import { extractSkills } from "../nlp/skills.js";
 
@@ -53,24 +52,36 @@ router.post("/upload", upload.single("cv"), async (req, res) => {
     const text = await extractText(req.file.buffer, req.file.mimetype);
     const chunks = chunkText(text);
 
-    // Store document
+    // Single-user tool (one employee, one CV): replace any previous CV so there's
+    // always exactly one active. Chunks cascade-delete with the document.
+    await CvDocument.destroy({ where: {} });
+
     const doc = await CvDocument.create({
       label: req.file.originalname,
       raw_text: text,
       char_count: text.length,
     });
 
-    // Embed each chunk — one at a time with a small delay to stay within rate limits
-    const chunkRows = [];
-    for (const chunk of chunks) {
-      const embedding = await embed(chunk);
-      chunkRows.push({ cv_document_id: doc.id, chunk_text: chunk, embedding });
-      await sleep(300);
+    // Batch-embed all chunks in ONE call (was N sequential calls + 300ms sleeps,
+    // which on the free tier ran ~15-25s and dropped the connection → "Failed to
+    // fetch"). Non-fatal: if embedding fails, the CV still works for term-overlap
+    // match / skill-gap; only RAG retrieval (tailor/cover/prep) degrades.
+    let embedded = 0;
+    let vectors = [];
+    try {
+      vectors = await embedBatch(chunks);
+    } catch (e) {
+      console.error("CV batch embed failed (non-fatal):", e.message);
     }
 
+    const chunkRows = chunks.map((chunk, i) => {
+      const embedding = Array.isArray(vectors[i]) ? vectors[i] : null;
+      if (embedding) embedded++;
+      return { cv_document_id: doc.id, chunk_text: chunk, embedding };
+    });
     await CvChunk.bulkCreate(chunkRows);
 
-    res.json({ id: doc.id, label: doc.label, chunks: chunkRows.length });
+    res.json({ id: doc.id, label: doc.label, chunks: chunkRows.length, embedded });
   } catch (err) {
     console.error("CV upload error:", err.message);
     res.status(500).json({ error: err.message });

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
@@ -18,6 +18,49 @@ function relativeTime(iso) {
   if (d < 7)  return `${d}d ago`;
   if (d < 30) return `${Math.floor(d / 7)}w ago`;
   return `${Math.floor(d / 30)}mo ago`;
+}
+
+function CvUploadBanner({ onUploaded }) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef();
+
+  async function handle(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("cv", file);
+    try {
+      const r = await fetch("/api/cv/upload", { method: "POST", body: fd });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Upload failed");
+      onUploaded();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="cv-banner">
+      <span className="cv-banner-text">
+        📄 Upload your CV to rank every job by how well it matches you.
+      </span>
+      <label className="rag-upload-btn">
+        {uploading ? "Analysing CV…" : "Upload CV (PDF or DOCX)"}
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".pdf,.docx"
+          onChange={handle}
+          disabled={uploading}
+          hidden
+        />
+      </label>
+    </div>
+  );
 }
 
 function CvScoreBadge({ score }) {
@@ -92,9 +135,16 @@ export default function JobFeed() {
   const employment = searchParams.get("employment_type")|| "";
   const remote     = searchParams.get("remote_type")    || "";
   const page       = parseInt(searchParams.get("page")  || "1");
-  const sort       = searchParams.get("sort") === "match" ? "match" : "";
+  const sortParam  = searchParams.get("sort");
   const strongOnly = searchParams.get("min_match") === "25";
   const smart      = searchParams.get("smart") === "1";
+  // Once a CV is uploaded, rank by match by default; before that (or if the user
+  // pins "newest"), sort by recency.
+  const sort =
+    sortParam === "match" ? "match"
+    : sortParam === "newest" ? "newest"
+    : hasCv ? "match"
+    : "newest";
 
   const hasFilters = q || country || langMatch || employment || remote;
 
@@ -309,13 +359,18 @@ export default function JobFeed() {
           ))}
         </div>
 
+        {/* CV upload — rank jobs by match (single-user: one employee, one CV) */}
+        {hasCv === false && !smart && (
+          <CvUploadBanner onUploaded={() => setHasCv(true)} />
+        )}
+
         {/* Sort */}
         {!smart && (
           <div className="sort-bar">
             <span className="sort-bar-label">Sort</span>
             <button
               className={`sort-pill ${sort !== "match" ? "is-active" : ""}`}
-              onClick={() => setSort("")}
+              onClick={() => setSort("newest")}
               aria-pressed={sort !== "match"}
             >
               Newest
