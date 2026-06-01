@@ -9,6 +9,8 @@ import collectRouter from "./routes/collect.js";
 import classifyRouter from "./routes/classify.js";
 import cvRouter from "./routes/cv.js";
 import ragRouter from "./routes/rag.js";
+import applicationsRouter from "./routes/applications.js";
+import analyticsRouter from "./routes/analytics.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +38,8 @@ app.use("/api/collect", collectRouter);
 app.use("/api/classify", classifyRouter);
 app.use("/api/cv", cvRouter);
 app.use("/api/jobs", ragRouter);
+app.use("/api/applications", applicationsRouter);
+app.use("/api/analytics", analyticsRouter);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "public")));

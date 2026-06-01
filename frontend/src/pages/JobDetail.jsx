@@ -162,6 +162,64 @@ function RagPanel({ jobId }) {
   );
 }
 
+const STATUS_LABELS = {
+  saved: "Saved", need_cv: "Need CV", applied: "Applied",
+  interview: "Interview", offer: "Offer 🎉", rejected: "Rejected", archived: "Archived",
+};
+
+function SaveButton({ jobId }) {
+  const [app, setApp] = useState(undefined);
+
+  useEffect(() => {
+    fetch(`/api/applications?job_id=${jobId}`)
+      .then((r) => r.json())
+      .then((arr) => setApp(arr?.[0] || null));
+  }, [jobId]);
+
+  async function save() {
+    const r = await fetch("/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ job_id: jobId }),
+    });
+    const data = await r.json();
+    setApp(data);
+  }
+
+  async function changeStatus(status) {
+    if (!app) return;
+    const r = await fetch(`/api/applications/${app.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    setApp(await r.json());
+  }
+
+  if (app === undefined) return null;
+
+  if (!app) {
+    return (
+      <button className="save-btn" onClick={save}>
+        + Save
+      </button>
+    );
+  }
+
+  return (
+    <select
+      className="status-select-inline"
+      value={app.status}
+      onChange={(e) => changeStatus(e.target.value)}
+      title="Change status"
+    >
+      {Object.entries(STATUS_LABELS).map(([v, l]) => (
+        <option key={v} value={v}>{l}</option>
+      ))}
+    </select>
+  );
+}
+
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -232,6 +290,7 @@ export default function JobDetail() {
         {/* Apply CTA — above description so it's always in view */}
         <div className="detail-cta">
           <ApplyButton url={job.apply_url} />
+          <SaveButton jobId={id} />
           <SourceCredit source={job.Source} />
         </div>
 

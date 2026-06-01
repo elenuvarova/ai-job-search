@@ -5,6 +5,7 @@ import JobClassification from "./JobClassification.js";
 import JobSkill from "./JobSkill.js";
 import CvDocument from "./CvDocument.js";
 import CvChunk from "./CvChunk.js";
+import Application from "./Application.js";
 
 Source.hasMany(Job, { foreignKey: "source_id", onDelete: "CASCADE" });
 Job.belongsTo(Source, { foreignKey: "source_id" });
@@ -15,6 +16,9 @@ JobClassification.belongsTo(Job, { foreignKey: "job_id" });
 Job.hasMany(JobSkill, { foreignKey: "job_id", onDelete: "CASCADE" });
 JobSkill.belongsTo(Job, { foreignKey: "job_id" });
 
+Job.hasOne(Application, { foreignKey: "job_id", onDelete: "CASCADE" });
+Application.belongsTo(Job, { foreignKey: "job_id" });
+
 CvDocument.hasMany(CvChunk, { foreignKey: "cv_document_id", onDelete: "CASCADE" });
 CvChunk.belongsTo(CvDocument, { foreignKey: "cv_document_id" });
 
@@ -22,4 +26,4 @@ export async function syncModels() {
   await sequelize.sync();
 }
 
-export { Source, Job, JobClassification, JobSkill, CvDocument, CvChunk };
+export { Source, Job, JobClassification, JobSkill, CvDocument, CvChunk, Application };
