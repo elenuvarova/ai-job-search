@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
+import { SkeletonFeed, ErrorState } from "../components/States.jsx";
 
 const STATUSES = ["saved", "need_cv", "applied", "interview", "offer", "rejected", "archived"];
 
@@ -84,17 +85,19 @@ function ApplicationRow({ app, onStatusChange, onDelete }) {
 export default function Applications() {
   const [apps, setApps]       = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
   const [filter, setFilter]   = useState("all");
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const load = () => {
+  useEffect(() => {
     setLoading(true);
+    setError(null);
     fetch("/api/applications")
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setApps)
+      .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  };
-
-  useEffect(load, []);
+  }, [reloadKey]);
 
   async function handleStatusChange(id, status) {
     await fetch(`/api/applications/${id}`, {
@@ -180,9 +183,13 @@ export default function Applications() {
           ))}
         </div>
 
-        {loading && <div className="status-msg">Loading…</div>}
+        {loading && <SkeletonFeed rows={4} />}
 
-        {!loading && filtered.length === 0 && (
+        {!loading && error && (
+          <ErrorState message={error} onRetry={() => setReloadKey((k) => k + 1)} />
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
           <div className="empty-state">
             <div className="empty-icon">📋</div>
             <div className="empty-title">
