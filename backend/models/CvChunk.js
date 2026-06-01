@@ -7,7 +7,7 @@ const CvChunk = sequelize.define(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     cv_document_id: { type: DataTypes.INTEGER, allowNull: false },
     chunk_text: { type: DataTypes.TEXT },
-    embedding: { type: DataTypes.JSON }, // float[] — 768-dim from Gemini text-embedding-004
+    embedding: { type: DataTypes.JSON }, // float[] — 768-dim from Gemini gemini-embedding-001
   },
   {
     tableName: "cv_chunks",

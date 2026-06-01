@@ -35,6 +35,15 @@ const COMPANIES = [
   { token: "klarna",      name: "Klarna",      country: null, city: null },
   { token: "zendesk",     name: "Zendesk",     country: null, city: null },
   { token: "datadog",     name: "Datadog",     country: null, city: null },
+  // Added after live verification (all resolve 200, ML/Data roles confirmed)
+  { token: "imc",          name: "IMC Trading",  country: "NL", city: "Amsterdam" }, // ML Eng roles in Amsterdam
+  { token: "inthepocket",  name: "In The Pocket", country: "BE", city: "Ghent" },    // BE AI product studio
+  { token: "databricks",   name: "Databricks",   country: null, city: null },        // Amsterdam office, many AI roles
+  { token: "dataiku",      name: "Dataiku",      country: null, city: null },         // NL-listed Data Eng roles
+  { token: "getyourguide", name: "GetYourGuide", country: null, city: null },         // pan-EU ML/Data
+  { token: "hellofresh",   name: "HelloFresh",   country: null, city: null },         // pan-EU Data/ML
+  { token: "helsing",      name: "Helsing",      country: null, city: null },         // EU-only AI research
+  { token: "wolt",         name: "Wolt",         country: null, city: null },         // EU ML (lower volume)
 ];
 
 const ROLE_PATTERNS = [

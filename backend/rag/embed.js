@@ -1,6 +1,9 @@
-// Gemini text-embedding-004 — free, 768-dim, multilingual EN/NL/FR/DE
+// Gemini gemini-embedding-001 — free, multilingual EN/NL/FR/DE.
+// (text-embedding-004 was shut down 2026-01-14; this is its stable replacement.)
+// outputDimensionality pinned to 768 to match the stored CvChunk vectors and cosineSim.
+// NOTE: vectors from the old model live in a different space — re-upload the CV after this change.
 const EMBED_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent";
 
 export async function embed(text) {
   const key = process.env.GEMINI_API_KEY;
@@ -10,8 +13,9 @@ export async function embed(text) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "models/text-embedding-004",
+      model: "models/gemini-embedding-001",
       content: { parts: [{ text: text.slice(0, 2048) }] },
+      outputDimensionality: 768,
     }),
   });
 

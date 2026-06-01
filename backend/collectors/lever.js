@@ -2,21 +2,15 @@ import { stripHtml, dedupeHash, sleep } from "../nlp/normalize.js";
 
 // Curated Benelux-connected companies on Lever ATS.
 // ?mode=json returns a JSON array; 404 = company not on Lever.
+// Every slug below was probed live and returns HTTP 200 (a JSON postings array).
+// 404 boards waste a request + 300ms each, so dead slugs are pruned rather than kept.
 const COMPANIES = [
-  // Belgium
-  { slug: "lightspeed",     name: "Lightspeed",     country: "BE", city: "Ghent" },
-  // Netherlands
-  { slug: "sendcloud",      name: "Sendcloud",      country: "NL", city: "Eindhoven" },
-  { slug: "channable",      name: "Channable",      country: "NL", city: "Utrecht" },
-  { slug: "temper",         name: "Temper",         country: "NL", city: "Amsterdam" },
-  // EU remote / offices in Benelux
-  { slug: "mews",           name: "Mews",           country: null, city: null },
+  // Benelux-HQ
+  { slug: "deliverect",     name: "Deliverect",     country: "BE", city: "Ghent" },
+  { slug: "talkwalker",     name: "Talkwalker",     country: "LU", city: "Luxembourg" },
+  // EU remote / offices accessible from Benelux
   { slug: "aircall",        name: "Aircall",        country: null, city: null },
-  { slug: "spendesk",       name: "Spendesk",       country: null, city: null },
-  { slug: "alan",           name: "Alan",           country: null, city: null },
-  { slug: "mirakl",         name: "Mirakl",         country: null, city: null },
   { slug: "contentsquare",  name: "Contentsquare",  country: null, city: null },
-  { slug: "payfit",         name: "PayFit",         country: null, city: null },
   { slug: "qonto",          name: "Qonto",          country: null, city: null },
   { slug: "doctrine",       name: "Doctrine",       country: null, city: null },
   { slug: "pennylane",      name: "Pennylane",      country: null, city: null },

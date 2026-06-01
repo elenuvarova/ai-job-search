@@ -78,11 +78,16 @@ async function get(url) {
 }
 
 async function getLatestThreadId() {
+  // Search by date (newest first) restricted to the whoishiring account, then take the
+  // most recent "Who is hiring?" thread — excluding the sibling "Who wants to be hired?".
+  // (Relevance search would happily match a years-old "...hiring right now?" thread.)
   const data = await get(
-    `${ALGOLIA}/search?query=Ask+HN+Who+is+Hiring&tags=story&hitsPerPage=5`
+    `${ALGOLIA}/search_by_date?tags=story,author_whoishiring&hitsPerPage=10`
   );
   const hit = (data.hits || []).find(
-    (h) => /ask hn: who is hiring/i.test(h.title || "") && h.author === "whoishiring"
+    (h) =>
+      /who is hiring/i.test(h.title || "") &&
+      !/wants to be hired/i.test(h.title || "")
   );
   return hit?.objectID || null;
 }
