@@ -12,6 +12,37 @@ const COUNTRIES = [
 const W = 720;
 const H = 460;
 
+// Fit a skill label inside its bubble: scale the font to the radius, wrap
+// multi-word names onto two lines, and shrink/ellipsize long single words.
+function fitLabel(text, r) {
+  const innerW = 2 * r - 12;
+  const charW = (f) => f * 0.56; // ~avg glyph width for the semibold system font
+  let fs = Math.max(8, Math.min(15, r * 0.36));
+  if (innerW < 18) return { fs, lines: [] }; // too small — rely on the tooltip
+
+  if (text.length * charW(fs) <= innerW) return { fs, lines: [text] };
+
+  const words = text.split(/\s+/);
+  if (words.length >= 2) {
+    let l1 = "", l2 = "";
+    for (const w of words) {
+      const next = l1 ? `${l1} ${w}` : w;
+      if (!l2 && next.length * charW(fs) <= innerW) l1 = next;
+      else l2 = l2 ? `${l2} ${w}` : w;
+    }
+    const longest = Math.max(l1.length, l2.length, 1);
+    fs = Math.max(8, Math.min(fs, innerW / (longest * 0.56)));
+    const m = Math.floor(innerW / charW(fs));
+    const trunc = (s) => (s.length > m ? s.slice(0, m - 1) + "…" : s);
+    return { fs, lines: [trunc(l1), trunc(l2)].filter(Boolean) };
+  }
+
+  // single long word — shrink the font to fit (floor 7px)
+  fs = Math.max(7, Math.min(fs, innerW / (text.length * 0.56)));
+  const m = Math.floor(innerW / charW(fs));
+  return { fs, lines: [text.length > m ? text.slice(0, m - 1) + "…" : text] };
+}
+
 // Interactive force-directed skill graph: drag any bubble to fling it; the rest
 // react and the layout settles. Bubble size ∝ how many jobs mention the skill.
 function SkillGraph({ skills }) {
@@ -123,26 +154,35 @@ function SkillGraph({ skills }) {
       onPointerUp={endDrag}
       onPointerLeave={endDrag}
     >
-      {nodesRef.current.map((n) => (
-        <g
-          key={n.id}
-          className="skill-node"
-          transform={`translate(${n.x},${n.y})`}
-          onPointerDown={onPointerDown(n.id)}
-        >
-          <circle
-            className="skill-node-circle"
-            r={n.r}
-            style={{ fillOpacity: 0.5 + (n.pct / maxPct) * 0.45 }}
-          />
-          {n.r > 24 && (
-            <text className="skill-node-label" dy="0.35em">
-              {n.id.length > 11 ? n.id.slice(0, 10) + "…" : n.id}
-            </text>
-          )}
-          <title>{n.id} — {n.pct}% of jobs ({n.count})</title>
-        </g>
-      ))}
+      {nodesRef.current.map((n) => {
+        const { fs, lines } = fitLabel(n.id, n.r);
+        return (
+          <g
+            key={n.id}
+            className="skill-node"
+            transform={`translate(${n.x},${n.y})`}
+            onPointerDown={onPointerDown(n.id)}
+          >
+            <circle
+              className="skill-node-circle"
+              r={n.r}
+              style={{ fillOpacity: 0.5 + (n.pct / maxPct) * 0.45 }}
+            />
+            {lines.map((ln, i) => (
+              <text
+                key={i}
+                className="skill-node-label"
+                style={{ fontSize: `${fs}px` }}
+                y={(i - (lines.length - 1) / 2) * fs * 1.05}
+                dy="0.32em"
+              >
+                {ln}
+              </text>
+            ))}
+            <title>{n.id} — {n.pct}% of jobs ({n.count})</title>
+          </g>
+        );
+      })}
     </svg>
   );
 }

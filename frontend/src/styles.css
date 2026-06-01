@@ -1231,7 +1231,6 @@ button { cursor: pointer; font: inherit; }
 .skill-node:hover .skill-node-circle { stroke-width: 3; }
 .skill-node-label {
   fill: #fff;
-  font-size: 11px;
   font-weight: var(--weight-semibold);
   text-anchor: middle;
   pointer-events: none;
