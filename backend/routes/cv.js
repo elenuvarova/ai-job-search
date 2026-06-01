@@ -1,14 +1,7 @@
 import { Router } from "express";
-import { createRequire } from "module";
 import multer from "multer";
-
-// pdf-parse and mammoth ship CommonJS — use createRequire in an ESM context
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
-const mammoth = require("mammoth");
-import { CvDocument, CvChunk, Job } from "../models/index.js";
-import { chunkText } from "../rag/chunk.js";
-import { embedBatch } from "../rag/embed.js";
+import { CvDocument, Job } from "../models/index.js";
+import { ingestCv, PDF_MIME, DOCX_MIME } from "../rag/cvIngest.js";
 import { scoreJobText, getActiveCvTerms } from "../rag/cvMatch.js";
 import { extractSkills } from "../nlp/skills.js";
 
@@ -17,22 +10,9 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
   fileFilter: (_req, file, cb) => {
-    const ok =
-      file.mimetype === "application/pdf" ||
-      file.mimetype ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    cb(null, ok);
+    cb(null, file.mimetype === PDF_MIME || file.mimetype === DOCX_MIME);
   },
 });
-
-async function extractText(buffer, mimetype) {
-  if (mimetype === "application/pdf") {
-    const data = await pdfParse(buffer);
-    return data.text;
-  }
-  const result = await mammoth.extractRawText({ buffer });
-  return result.value;
-}
 
 // GET /api/cv — get current (latest) CV document
 router.get("/", async (_req, res) => {
@@ -49,39 +29,12 @@ router.post("/upload", upload.single("cv"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file or unsupported type (PDF/DOCX only)" });
 
   try {
-    const text = await extractText(req.file.buffer, req.file.mimetype);
-    const chunks = chunkText(text);
-
-    // Single-user tool (one employee, one CV): replace any previous CV so there's
-    // always exactly one active. Chunks cascade-delete with the document.
-    await CvDocument.destroy({ where: {} });
-
-    const doc = await CvDocument.create({
+    const result = await ingestCv({
+      buffer: req.file.buffer,
+      mimetype: req.file.mimetype,
       label: req.file.originalname,
-      raw_text: text,
-      char_count: text.length,
     });
-
-    // Batch-embed all chunks in ONE call (was N sequential calls + 300ms sleeps,
-    // which on the free tier ran ~15-25s and dropped the connection → "Failed to
-    // fetch"). Non-fatal: if embedding fails, the CV still works for term-overlap
-    // match / skill-gap; only RAG retrieval (tailor/cover/prep) degrades.
-    let embedded = 0;
-    let vectors = [];
-    try {
-      vectors = await embedBatch(chunks);
-    } catch (e) {
-      console.error("CV batch embed failed (non-fatal):", e.message);
-    }
-
-    const chunkRows = chunks.map((chunk, i) => {
-      const embedding = Array.isArray(vectors[i]) ? vectors[i] : null;
-      if (embedding) embedded++;
-      return { cv_document_id: doc.id, chunk_text: chunk, embedding };
-    });
-    await CvChunk.bulkCreate(chunkRows);
-
-    res.json({ id: doc.id, label: doc.label, chunks: chunkRows.length, embedded });
+    res.json(result);
   } catch (err) {
     console.error("CV upload error:", err.message);
     res.status(500).json({ error: err.message });
