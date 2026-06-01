@@ -5,8 +5,9 @@
   --text-sm:   13px;   /* meta · secondary · filter labels              */
   --text-base: 14px;   /* body · form controls                          */
   --text-md:   15px;   /* card titles · navbar brand                    */
-  --text-lg:   18px;   /* detail page heading                           */
-  --text-xl:   22px;   /* (reserved for future landing pages)           */
+  --text-lg:   18px;   /* card-group / section headings                 */
+  --text-xl:   22px;   /* page titles                                   */
+  --text-2xl:  28px;   /* hero / detail page heading                    */
 
   --weight-normal:   400;
   --weight-medium:   500;
@@ -678,6 +679,70 @@ button { cursor: pointer; font: inherit; }
 .chat-input-bar { display: flex; gap: var(--space-2); position: sticky; bottom: var(--space-3); }
 .chat-input-bar input { flex: 1; }
 
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .page { padding: 0 var(--space-3) var(--space-6); }
+
+  /* Navbar: brand + actions on top row; nav links scroll on their own row */
+  .navbar {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+  .nav-links {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-link { white-space: nowrap; }
+  .navbar-sub { display: none; }
+
+  /* Filters: every control full width */
+  .filter-group,
+  .filter-group.search-group { width: 100%; min-width: 0; }
+  .filters select { min-width: 0; width: 100%; }
+  .filter-clear { width: 100%; align-self: stretch; text-align: center; }
+
+  /* Page header stacks */
+  .page-header { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
+  .page-title { font-size: var(--text-lg); }
+
+  /* Job cards + detail wrap cleanly */
+  .job-card-top { flex-direction: column; gap: var(--space-2); }
+  .job-card-badges { align-self: flex-start; }
+  .detail-cta { flex-wrap: wrap; }
+  .detail-title { font-size: var(--text-xl); }
+
+  /* Tracker rows stack */
+  .app-row { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+  .app-row-actions { width: 100%; }
+
+  /* Conversational + banner surfaces go full width */
+  .chat-msg { max-width: 100%; }
+  .cv-banner { flex-direction: column; align-items: flex-start; }
+  .funnel-row { gap: var(--space-2); }
+  .analyze-form { max-width: 100%; }
+}
+
+/* Coarse-pointer (touch): larger tap targets */
+@media (pointer: coarse) {
+  .nav-link,
+  .sort-pill,
+  .smart-toggle,
+  .status-tab,
+  .filter-clear { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+}
+
+/* Respect reduced-motion for the interactive graph + transitions */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
 /* ─── Description ────────────────────────────────────────────────── */
 .description-box {
   background: var(--bg-card);
@@ -958,10 +1023,11 @@ button { cursor: pointer; font: inherit; }
   margin-bottom: var(--space-4);
 }
 .page-title {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   font-weight: var(--weight-bold);
   color: var(--text-1);
   line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
 }
 
 /* ─── Application Tracker ────────────────────────────────────────── */
