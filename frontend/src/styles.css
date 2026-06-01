@@ -621,6 +621,48 @@ button { cursor: pointer; font: inherit; }
 .similar-title { color: var(--text-1); font-weight: var(--weight-medium); font-size: var(--text-sm); }
 .similar-meta { color: var(--text-3); font-size: var(--text-xs); }
 
+/* ─── Chat (ask your market) ─────────────────────────────────────── */
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 240px;
+  margin-bottom: var(--space-4);
+}
+.chat-empty { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chat-suggestion {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill, 999px);
+  color: var(--text-2);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.chat-suggestion:hover { border-color: var(--accent); color: var(--text-1); }
+.chat-msg { display: flex; flex-direction: column; gap: var(--space-2); max-width: 760px; }
+.chat-msg.user { align-self: flex-end; align-items: flex-end; }
+.chat-msg.assistant { align-self: flex-start; }
+.chat-bubble {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-1);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+.chat-msg.user .chat-bubble { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chat-refs { display: flex; flex-direction: column; gap: 4px; }
+.chat-ref {
+  font-size: var(--text-sm);
+  color: var(--accent);
+  text-decoration: none;
+}
+.chat-ref:hover { text-decoration: underline; }
+.chat-input-bar { display: flex; gap: var(--space-2); position: sticky; bottom: var(--space-3); }
+.chat-input-bar input { flex: 1; }
+
 /* ─── Description ────────────────────────────────────────────────── */
 .description-box {
   background: var(--bg-card);

@@ -19,6 +19,7 @@ export default function Navbar({ onHelpClick }) {
       <div className="nav-links">
         {navLink("/jobs", "Jobs")}
         {navLink("/analyze", "Analyze")}
+        {navLink("/chat", "Ask")}
         {navLink("/applications", "Tracker")}
         {navLink("/skills", "Skills")}
       </div>

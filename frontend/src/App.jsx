@@ -4,6 +4,7 @@ import JobDetail from "./pages/JobDetail.jsx";
 import Applications from "./pages/Applications.jsx";
 import Skills from "./pages/Skills.jsx";
 import Analyze from "./pages/Analyze.jsx";
+import Chat from "./pages/Chat.jsx";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/applications" element={<Applications />} />
         <Route path="/skills" element={<Skills />} />
         <Route path="/analyze" element={<Analyze />} />
+        <Route path="/chat" element={<Chat />} />
       </Routes>
     </BrowserRouter>
   );
