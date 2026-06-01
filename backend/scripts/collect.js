@@ -6,6 +6,10 @@ import { collectAdzuna } from "../collectors/adzuna.js";
 import { collectArbeitnow } from "../collectors/arbeitnow.js";
 import { collectRemotive } from "../collectors/remotive.js";
 import { collectMuse } from "../collectors/muse.js";
+import { collectRemoteok } from "../collectors/remoteok.js";
+import { collectGreenhouse } from "../collectors/greenhouse.js";
+import { collectLever } from "../collectors/lever.js";
+import { collectHnHiring } from "../collectors/hn-hiring.js";
 
 const SOURCES = [
   {
@@ -35,6 +39,32 @@ const SOURCES = [
     attribution_html:
       '<a href="https://www.themuse.com" rel="noopener">Jobs via The Muse</a>',
     collect: collectMuse,
+  },
+  {
+    key: "remoteok",
+    label: "RemoteOK",
+    attribution_html:
+      '<a href="https://remoteok.com" rel="noopener">Remote jobs via RemoteOK</a>',
+    collect: collectRemoteok,
+  },
+  {
+    key: "greenhouse",
+    label: "Company Boards (Greenhouse)",
+    attribution_html: null,
+    collect: collectGreenhouse,
+  },
+  {
+    key: "lever",
+    label: "Company Boards (Lever)",
+    attribution_html: null,
+    collect: collectLever,
+  },
+  {
+    key: "hn_hiring",
+    label: "HN: Who's Hiring",
+    attribution_html:
+      '<a href="https://news.ycombinator.com" rel="noopener">Via Hacker News</a>',
+    collect: collectHnHiring,
   },
 ];
 
