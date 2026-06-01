@@ -310,7 +310,7 @@ export default function JobFeed() {
         </div>
 
         {/* Sort */}
-        {hasCv && !smart && (
+        {!smart && (
           <div className="sort-bar">
             <span className="sort-bar-label">Sort</span>
             <button
@@ -320,14 +320,16 @@ export default function JobFeed() {
             >
               Newest
             </button>
-            <button
-              className={`sort-pill ${sort === "match" ? "is-active" : ""}`}
-              onClick={() => setSort("match")}
-              aria-pressed={sort === "match"}
-            >
-              ★ Best match
-            </button>
-            {sort === "match" && (
+            {hasCv && (
+              <button
+                className={`sort-pill ${sort === "match" ? "is-active" : ""}`}
+                onClick={() => setSort("match")}
+                aria-pressed={sort === "match"}
+              >
+                ★ Best match
+              </button>
+            )}
+            {hasCv && sort === "match" && (
               <label className="sort-strong">
                 <input
                   type="checkbox"

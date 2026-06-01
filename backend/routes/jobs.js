@@ -1,11 +1,18 @@
 import { Router } from "express";
 import { Op } from "sequelize";
+import { sequelize } from "../db.js";
 import { Job, Source, JobClassification, JobSkill } from "../models/index.js";
 import { getActiveCvTerms, scoreJobText } from "../rag/cvMatch.js";
 import { embed } from "../rag/embed.js";
 import { rankByEmbedding } from "../rag/jobSearch.js";
 
 const router = Router();
+
+// Newest-first, but jobs without a posted_at go LAST (not first). Plain
+// `posted_at DESC` puts NULLs first on Postgres, which would float undated jobs
+// (HN, some boards) to the top. `posted_at IS NULL ASC` keeps dated jobs first.
+// Works on both Postgres and SQLite without the NULLS LAST keyword.
+const RECENCY_ORDER = [[sequelize.literal("posted_at IS NULL"), "ASC"], ["posted_at", "DESC"]];
 
 // Attributes returned for each classification, shared by both sort paths.
 const CLASS_ATTRS = [
@@ -66,7 +73,7 @@ router.get("/", async (req, res) => {
         where: jobWhere,
         include: [sourceInclude([]), classInclude([])],
         attributes: ["id", "title", "description", "posted_at"],
-        order: [["posted_at", "DESC"]],
+        order: RECENCY_ORDER,
         limit: MAX_SCORED,
         subQuery: false,
       });
@@ -77,7 +84,11 @@ router.get("/", async (req, res) => {
         posted_at: j.posted_at,
       }));
       if (minMatch > 0) scored = scored.filter((s) => s.score >= minMatch);
-      scored.sort((a, b) => b.score - a.score || new Date(b.posted_at) - new Date(a.posted_at));
+      scored.sort(
+        (a, b) =>
+          b.score - a.score ||
+          new Date(b.posted_at || 0) - new Date(a.posted_at || 0)
+      );
 
       const total = scored.length;
       const pageSlice = scored.slice(offset, offset + limit);
@@ -123,7 +134,7 @@ router.get("/", async (req, res) => {
         sourceInclude(["key", "label", "attribution_html"]),
         classInclude(CLASS_ATTRS),
       ],
-      order: [["posted_at", "DESC"]],
+      order: RECENCY_ORDER,
       limit,
       offset,
       distinct: true,

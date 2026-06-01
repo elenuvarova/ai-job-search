@@ -17,7 +17,8 @@ export async function runEmbedJobs() {
   const jobs = await Job.findAll({
     where: { embedding: { [Op.is]: null } },
     attributes: ["id", "title", "description"],
-    order: [["posted_at", "DESC"]],
+    // Newest first, undated last (NULLs sort last across both dialects).
+    order: [[sequelize.literal("posted_at IS NULL"), "ASC"], ["posted_at", "DESC"]],
     limit: MAX_PER_RUN,
   });
   console.log(`[embed] ${jobs.length} jobs to embed (cap ${MAX_PER_RUN})`);
