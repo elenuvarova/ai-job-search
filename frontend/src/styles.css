@@ -593,3 +593,105 @@ button { cursor: pointer; font: inherit; }
   font-weight: var(--weight-medium);
 }
 .tour-btn-primary:hover { background: var(--accent-hover); }
+
+/* ─── RAG Panel ──────────────────────────────────────────────────── */
+.rag-upload-prompt {
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+}
+.rag-upload-hint {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  margin-bottom: var(--space-4);
+}
+.rag-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg-chip);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+.rag-upload-btn:hover { border-color: var(--accent); color: var(--text-1); }
+
+.rag-cv-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.rag-cv-name { font-size: var(--text-sm); color: var(--text-2); }
+.rag-cv-remove {
+  background: none;
+  border: none;
+  color: var(--text-4);
+  font-size: var(--text-xs);
+  padding: 0;
+}
+.rag-cv-remove:hover { color: var(--block-text); }
+
+.rag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.rag-action-btn {
+  background: var(--bg-chip);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  transition: border-color 0.15s;
+}
+.rag-action-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text-1); }
+.rag-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.rag-action-btn.loading { color: var(--text-3); }
+
+.rag-result {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.rag-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+}
+.rag-copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  font-size: var(--text-xs);
+  padding: 2px var(--space-2);
+}
+.rag-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rag-result-text {
+  padding: var(--space-4);
+  font-family: system-ui, sans-serif;
+  font-size: var(--text-sm);
+  color: var(--text-1);
+  line-height: var(--leading-relaxed);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 600px;
+  overflow-y: auto;
+  margin: 0;
+}

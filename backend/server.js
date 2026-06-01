@@ -7,6 +7,8 @@ import { syncModels } from "./models/index.js";
 import jobsRouter from "./routes/jobs.js";
 import collectRouter from "./routes/collect.js";
 import classifyRouter from "./routes/classify.js";
+import cvRouter from "./routes/cv.js";
+import ragRouter from "./routes/rag.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +34,8 @@ app.get("/api/hello", (req, res) => {
 app.use("/api/jobs", jobsRouter);
 app.use("/api/collect", collectRouter);
 app.use("/api/classify", classifyRouter);
+app.use("/api/cv", cvRouter);
+app.use("/api/jobs", ragRouter);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "public")));
