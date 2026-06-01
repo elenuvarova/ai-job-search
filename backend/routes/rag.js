@@ -3,6 +3,7 @@ import { Job, JobClassification, JobSkill, CvDocument } from "../models/index.js
 import { embed } from "../rag/embed.js";
 import { retrieveTopChunks } from "../rag/retrieve.js";
 import { runAssistant, generateText } from "../rag/assistant.js";
+import { extractSkills } from "../nlp/skills.js";
 
 const router = Router();
 const ACTIONS = ["tailor-cv", "cover-letter", "interview-prep"];
@@ -48,6 +49,71 @@ router.post("/:jobId/company-brief", async (req, res) => {
     res.json({ result: brief });
   } catch (err) {
     console.error("company-brief error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/jobs/:jobId/apply-kit — one combined "ready to apply" bundle:
+// skill gap + tailored-CV notes + cover letter + interview prep, as Markdown.
+// The 3 LLM pieces share one CV retrieval and run in parallel.
+router.post("/:jobId/apply-kit", async (req, res) => {
+  try {
+    const job = await Job.findByPk(req.params.jobId, {
+      include: [
+        { model: JobClassification, required: false },
+        { model: JobSkill, required: false },
+      ],
+    });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    const cv = await CvDocument.findOne({
+      order: [["created_at", "DESC"]],
+      attributes: ["id", "raw_text"],
+    });
+    if (!cv) return res.status(400).json({ error: "No CV uploaded yet. Upload a CV first." });
+
+    // Shared retrieval (one embed call for all three actions).
+    const skills = (job.JobSkills || []).map((s) => s.skill).join(" ");
+    const query = `${job.title} ${job.JobClassification?.role_family || ""} ${skills}`.trim();
+    const queryEmbedding = await embed(query);
+    const chunks = await retrieveTopChunks(cv.id, queryEmbedding, 5);
+
+    const [tailor, cover, interview] = await Promise.all([
+      runAssistant("tailor-cv", job, chunks, job.description),
+      runAssistant("cover-letter", job, chunks, job.description),
+      runAssistant("interview-prep", job, chunks, job.description),
+    ]);
+
+    // Skill gap (rule-based, no LLM).
+    const jobSkills = [
+      ...new Set(extractSkills(`${job.title} ${job.description || ""}`).map((s) => s.skill)),
+    ];
+    const cvSkills = new Set(extractSkills(cv.raw_text || "").map((s) => s.skill));
+    const matched = jobSkills.filter((s) => cvSkills.has(s));
+    const missing = jobSkills.filter((s) => !cvSkills.has(s));
+
+    const md = [
+      `# Apply kit — ${job.title}${job.company ? ` @ ${job.company}` : ""}`,
+      "",
+      "## Skill match",
+      `**You have:** ${matched.join(", ") || "—"}`,
+      "",
+      `**Gaps to address:** ${missing.join(", ") || "—"}`,
+      "",
+      "## Tailored-CV recommendations",
+      tailor,
+      "",
+      "## Cover letter",
+      cover,
+      "",
+      "## Interview prep",
+      interview,
+      "",
+    ].join("\n");
+
+    res.json({ result: md });
+  } catch (err) {
+    console.error("apply-kit error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });

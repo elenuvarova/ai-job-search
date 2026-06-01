@@ -29,6 +29,7 @@ function ApplyButton({ url }) {
 }
 
 const ACTION_LABELS = {
+  "apply-kit":     "📦 Apply kit",
   "tailor-cv":     "✨ Tailor CV",
   "cover-letter":  "✉ Cover Letter",
   "interview-prep":"🎯 Interview Prep",
@@ -103,6 +104,17 @@ function RagPanel({ jobId }) {
     });
   }
 
+  function downloadResult() {
+    if (!ragResult) return;
+    const blob = new Blob([ragResult], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${action || "result"}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (cv === undefined) return null; // still loading CV status
 
   return (
@@ -152,9 +164,14 @@ function RagPanel({ jobId }) {
             <div className="rag-result">
               <div className="rag-result-header">
                 <span>{ACTION_LABELS[action]}</span>
-                <button className="rag-copy-btn" onClick={copyResult}>
-                  {copied ? "Copied ✓" : "Copy"}
-                </button>
+                <span className="rag-result-btns">
+                  <button className="rag-copy-btn" onClick={copyResult}>
+                    {copied ? "Copied ✓" : "Copy"}
+                  </button>
+                  <button className="rag-copy-btn" onClick={downloadResult}>
+                    Download
+                  </button>
+                </span>
               </div>
               <pre className="rag-result-text">{ragResult}</pre>
             </div>
