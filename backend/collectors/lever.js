@@ -15,6 +15,10 @@ const COMPANIES = [
   { slug: "doctrine",       name: "Doctrine",       country: null, city: null },
   { slug: "pennylane",      name: "Pennylane",      country: null, city: null },
   { slug: "swile",          name: "Swile",          country: null, city: null },
+  // AI labs / EU (verified live; country resolved per-role below)
+  { slug: "mistral",        name: "Mistral AI",     country: null, city: null }, // incl. Luxembourg + Amsterdam roles
+  { slug: "veepee",         name: "Veepee",         country: null, city: null },
+  { slug: "pnlfin",         name: "Finom",          country: "NL", city: "Amsterdam" }, // EU-hosted Lever board (api.eu.lever.co)
 ];
 
 const ROLE_PATTERNS = [
@@ -31,10 +35,30 @@ function isRelevant(title) {
 
 function parseCountry(location, fallback) {
   if (!location) return fallback;
-  if (/netherlands|amsterdam|rotterdam|utrecht|eindhoven/i.test(location)) return "NL";
-  if (/belgium|brussels|ghent|antwerp/i.test(location)) return "BE";
-  if (/luxembourg/i.test(location)) return "LU";
+  const t = location.toLowerCase();
+  if (/netherlands|amsterdam|rotterdam|utrecht|eindhoven|the hague/.test(t)) return "NL";
+  if (/belgium|brussels|ghent|gent|antwerp|leuven/.test(t)) return "BE";
+  if (/luxembourg/.test(t)) return "LU";
+  if (/united kingdom|england|london|manchester|\buk\b|scotland|cardiff/.test(t)) return "GB";
+  if (/germany|berlin|munich|münchen|munchen|hamburg|frankfurt/.test(t)) return "DE";
+  if (/france|paris|lyon/.test(t)) return "FR";
+  if (/spain|madrid|barcelona/.test(t)) return "ES";
+  if (/italy|milan|rome/.test(t)) return "IT";
+  if (/austria|vienna|wien/.test(t)) return "AT";
+  if (/poland|warsaw|krak/.test(t)) return "PL";
   return fallback;
+}
+
+// Lever has two API hosts: US (api.lever.co) and EU (api.eu.lever.co). A board
+// lives on exactly one; the other returns 404. Try US first, then fall back to EU.
+async function fetchPostings(slug) {
+  const headers = { "User-Agent": "benelux-job-scout/1.0 (personal research tool)" };
+  for (const host of ["api.lever.co", "api.eu.lever.co"]) {
+    const res = await fetch(`https://${host}/v0/postings/${slug}?mode=json`, { headers });
+    if (res.ok) return res.json();
+    if (res.status !== 404) console.log(`  Lever/${slug}@${host}: HTTP ${res.status}`);
+  }
+  return null; // not found on either host
 }
 
 export async function collectLever(source) {
@@ -42,21 +66,7 @@ export async function collectLever(source) {
 
   for (const company of COMPANIES) {
     try {
-      const url = `https://api.lever.co/v0/postings/${company.slug}?mode=json`;
-      const res = await fetch(url, {
-        headers: { "User-Agent": "benelux-job-scout/1.0 (personal research tool)" },
-      });
-
-      if (res.status === 404) {
-        // Company not on Lever — silent skip
-        continue;
-      }
-      if (!res.ok) {
-        console.log(`  Lever/${company.slug}: HTTP ${res.status}`);
-        continue;
-      }
-
-      const postings = await res.json();
+      const postings = await fetchPostings(company.slug);
       if (!Array.isArray(postings)) continue;
 
       let added = 0;

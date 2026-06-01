@@ -10,6 +10,9 @@ const COMPANIES = [
   { slug: "Vitol",      name: "Vitol",     country: "NL", city: "Rotterdam" },
   { slug: "DataChef",   name: "DataChef",  country: "NL", city: "Nootdorp" },
   { slug: "Wavestone1", name: "Wavestone", country: "LU", city: "Luxembourg" }, // global board — Benelux-filtered below
+  { slug: "ARHS",       name: "ARHS Group", country: "LU", city: "Luxembourg" }, // LU — Data Engineers
+  { slug: "WAES",       name: "WAES",      country: "NL", city: "Eindhoven" },
+  { slug: "Coolblue",   name: "Coolblue",  country: "NL", city: "Rotterdam" },  // large board — Benelux-filtered below
 ];
 
 const API = "https://api.smartrecruiters.com/v1/companies";

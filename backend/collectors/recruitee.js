@@ -9,6 +9,9 @@ const COMPANIES = [
   { slug: "dpgmedia",   name: "DPG Media",  country: "BE", city: "Antwerp" },
   { slug: "bunq",       name: "bunq",       country: "NL", city: "Amsterdam" },
   { slug: "intigriti",  name: "Intigriti",  country: "BE", city: "Antwerp" },
+  { slug: "xebiacareers", name: "Xebia",    country: "NL", city: "Amsterdam" }, // strong NL/BE Data Eng/ML board
+  { slug: "riverflex",  name: "Riverflex",  country: "NL", city: "Amsterdam" },
+  { slug: "superlinear", name: "Superlinear", country: "BE", city: "Leuven" }, // ex-Radix.ai (radix slug now redirects here)
 ];
 
 const ROLE_PATTERNS = [

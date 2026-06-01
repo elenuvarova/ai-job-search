@@ -12,7 +12,7 @@ This document is the original design. The codebase has since evolved — this ta
 
 | Area | Planned here | Actually shipped |
 |---|---|---|
-| **Job sources** | 5 (Adzuna, Arbeitnow, Remotive, Muse, Greenhouse) | **12**: + RemoteOK, Jobicy, Lever, **EURES** (native LU/BE/NL), Recruitee, SmartRecruiters, HN "Who's Hiring" |
+| **Job sources** | 5 (Adzuna, Arbeitnow, Remotive, Muse, Greenhouse) | **14**: + RemoteOK, Jobicy, Lever, **EURES** (native LU/BE/NL), Recruitee, SmartRecruiters, Ashby, Workable, HN "Who's Hiring" |
 | **Geographic scope** | Benelux (BE/NL/LU) | Benelux in full **+ wider EU & UK filtered to remote/contract** (Adzuna gb/de/fr/es/it/at/pl behind a remote-or-contract gate; remote feeds) |
 | **Embeddings** | Local `transformers.js` (`multilingual-e5-small`, 384-dim) | **Gemini `gemini-embedding-001`** API, 768-dim (`backend/rag/embed.js`). The local model was never added. |
 | **Fit scoring** | Weighted formula (35% skill · 20% role · …) + apply-priority tiers | **CV-match % via term overlap** (`backend/routes/cv.js`, `/api/cv/scores`) — no weighted formula or priority tiers yet |
@@ -39,7 +39,7 @@ This document is the original design. The codebase has since evolved — this ta
 | **Embeddings** | **Gemini `gemini-embedding-001`** (768-dim) via API *(shipped; the planned local `transformers.js` was never added)* | Multilingual EN/NL/FR/DE. **Note:** the predecessor `text-embedding-004` was shut down 2026-01-14 — migrated to `gemini-embedding-001`. This spends a (separate) free quota, unlike the originally-planned offline model; revisit local embeddings if it ever bites. |
 | **NLP strategy** | **Rule-based first, LLM only for the ambiguous tail** | 5 of 7 tasks are reliably rule-based using the doc's existing multilingual keyword lists → near-zero API spend at steady state. |
 
-**Sources shipped (free, all zero-cost):** Adzuna · **EURES** (native LU/BE/NL) · Arbeitnow · Remotive · RemoteOK · Jobicy · The Muse · Greenhouse · Lever · Recruitee · SmartRecruiters · HN "Who's Hiring". *(Planned v1 was the first five; the rest were added later.)*
+**Sources shipped (free, all zero-cost):** Adzuna · **EURES** (native LU/BE/NL) · Arbeitnow · Remotive · RemoteOK · Jobicy · The Muse · Greenhouse · Lever · Recruitee · SmartRecruiters · Ashby · Workable · HN "Who's Hiring". *(Planned v1 was the first five; the rest were added later.)*
 **Deferred / confirmed unavailable:** VDAB (needs signed partner agreement), ADEM/`data.public.lu` (open data is skills *statistics*, not vacancies), UWV/werk.nl (no API), Indeed publisher API (dead since 2020), Moovijob/jobs.lu (bot-blocked). LinkedIn/Indeed scraping: **out of scope** (ToS).
 
 ---

@@ -13,6 +13,8 @@ import { collectGreenhouse } from "../collectors/greenhouse.js";
 import { collectLever } from "../collectors/lever.js";
 import { collectRecruitee } from "../collectors/recruitee.js";
 import { collectSmartRecruiters } from "../collectors/smartrecruiters.js";
+import { collectAshby } from "../collectors/ashby.js";
+import { collectWorkable } from "../collectors/workable.js";
 import { collectHnHiring } from "../collectors/hn-hiring.js";
 
 const SOURCES = [
@@ -88,6 +90,18 @@ const SOURCES = [
     label: "Company Boards (SmartRecruiters)",
     attribution_html: null,
     collect: collectSmartRecruiters,
+  },
+  {
+    key: "ashby",
+    label: "Company Boards (Ashby)",
+    attribution_html: null,
+    collect: collectAshby,
+  },
+  {
+    key: "workable",
+    label: "Company Boards (Workable)",
+    attribution_html: null,
+    collect: collectWorkable,
   },
   {
     key: "hn_hiring",

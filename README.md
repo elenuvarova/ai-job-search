@@ -6,7 +6,7 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the design rationale an
 
 ## What it does
 
-- **Collects** ML/Data/AI jobs daily from **12 free sources** into Postgres (see below). Benelux is covered fully; other EU countries + the UK are filtered to **remote or contract** roles.
+- **Collects** ML/Data/AI jobs daily from **14 free sources** into Postgres (see below). Benelux is covered fully; other EU countries + the UK are filtered to **remote or contract** roles.
 - **Classifies** each posting with rule-based NLP: role family, seniority, employment type, remote type, and a **language-requirement blocker** (is the local language a hard requirement or a nice-to-have?).
 - **Scores** each job against your uploaded CV (term-overlap match %, shown as a badge in the feed).
 - **RAG assistant**: upload a CV (PDF/DOCX) → tailor it to a job, draft a cover letter, get gap analysis and interview prep (Gemini, with a Groq fallback).
@@ -31,7 +31,7 @@ All zero-cost (free key or zero-auth):
 | **EURES** | zero-auth | EU portal — **native Luxembourg** + large BE/NL volume |
 | Arbeitnow · Remotive · RemoteOK · Jobicy | zero-auth | EU / remote feeds |
 | The Muse | free key | Curated employers |
-| Greenhouse · Lever · Recruitee · SmartRecruiters | zero-auth | Curated Benelux company boards |
+| Greenhouse · Lever · Recruitee · SmartRecruiters · Ashby · Workable | zero-auth | Curated Benelux + EU/UK AI company boards |
 | HN "Who's Hiring" | zero-auth | Monthly Hacker News thread |
 
 ## Local development

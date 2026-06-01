@@ -44,6 +44,14 @@ const COMPANIES = [
   { token: "hellofresh",   name: "HelloFresh",   country: null, city: null },         // pan-EU Data/ML
   { token: "helsing",      name: "Helsing",      country: null, city: null },         // EU-only AI research
   { token: "wolt",         name: "Wolt",         country: null, city: null },         // EU ML (lower volume)
+  // EU / UK — strong AI/Data hiring, remote-friendly (verified live)
+  { token: "celonis",      name: "Celonis",      country: null, city: null },         // process-mining AI, EU offices
+  { token: "doctolib",     name: "Doctolib",     country: null, city: null },         // Paris/EU AI/Data
+  { token: "gitlab",       name: "GitLab",       country: null, city: null },         // remote, EU-eligible
+  { token: "monzo",        name: "Monzo",        country: null, city: null },         // UK-remote ML/DS
+  { token: "gocardless",   name: "GoCardless",   country: null, city: null },         // London/Lisbon/Riga Data
+  { token: "raisin",       name: "Raisin",       country: null, city: null },         // Berlin AI
+  { token: "solarisbank",  name: "Solaris",      country: null, city: null },         // Berlin AI
 ];
 
 const ROLE_PATTERNS = [
