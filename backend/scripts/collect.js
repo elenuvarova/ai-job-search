@@ -3,6 +3,7 @@ import "dotenv/config";
 import { sequelize } from "../db.js";
 import { syncModels, Source, Job } from "../models/index.js";
 import { collectAdzuna } from "../collectors/adzuna.js";
+import { collectEures } from "../collectors/eures.js";
 import { collectArbeitnow } from "../collectors/arbeitnow.js";
 import { collectRemotive } from "../collectors/remotive.js";
 import { collectMuse } from "../collectors/muse.js";
@@ -18,6 +19,13 @@ const SOURCES = [
     attribution_html:
       '<a href="https://www.adzuna.com" rel="noopener">Jobs by Adzuna</a>',
     collect: collectAdzuna,
+  },
+  {
+    key: "eures",
+    label: "EURES (EU portal)",
+    attribution_html:
+      '<a href="https://europa.eu/eures" rel="noopener">Source: EURES — the European Job Mobility Portal</a>',
+    collect: collectEures,
   },
   {
     key: "arbeitnow",
