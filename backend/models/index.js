@@ -1,4 +1,5 @@
 import { sequelize } from "../db.js";
+import { DataTypes } from "sequelize";
 import Source from "./Source.js";
 import Job from "./Job.js";
 import JobClassification from "./JobClassification.js";
@@ -22,8 +23,30 @@ Application.belongsTo(Job, { foreignKey: "job_id" });
 CvDocument.hasMany(CvChunk, { foreignKey: "cv_document_id", onDelete: "CASCADE" });
 CvChunk.belongsTo(CvDocument, { foreignKey: "cv_document_id" });
 
+// A column added to a model after its table already exists is NOT created by a
+// plain sync() (sync never ALTERs existing tables). This idempotently adds any
+// such column on boot — safe to run every time, dialect-agnostic.
+async function ensureColumns() {
+  const qi = sequelize.getQueryInterface();
+  const wanted = [
+    { table: "jobs", column: "embedding", spec: { type: DataTypes.JSON, allowNull: true } },
+  ];
+  for (const { table, column, spec } of wanted) {
+    try {
+      const desc = await qi.describeTable(table);
+      if (!desc[column]) {
+        await qi.addColumn(table, column, spec);
+        console.log(`[db] added missing column ${table}.${column}`);
+      }
+    } catch (err) {
+      console.error(`[db] ensureColumns ${table}.${column}: ${err.message}`);
+    }
+  }
+}
+
 export async function syncModels() {
   await sequelize.sync();
+  await ensureColumns();
 }
 
 export { Source, Job, JobClassification, JobSkill, CvDocument, CvChunk, Application };

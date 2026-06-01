@@ -24,8 +24,10 @@ export async function runEmbedJobs() {
 
   let done = 0;
   for (const job of jobs) {
+    const text = `${job.title || ""}\n${(job.description || "").slice(0, 2000)}`.trim();
+    if (!text) continue; // empty record would 400 on the embed API and re-poison the queue
     try {
-      const vec = await embed(`${job.title || ""}\n${(job.description || "").slice(0, 2000)}`);
+      const vec = await embed(text);
       await job.update({ embedding: vec });
       done++;
     } catch (err) {

@@ -68,7 +68,12 @@ function ApplicationRow({ app, onStatusChange, onDelete }) {
           ))}
         </select>
         <span className="app-date">{relativeTime(app.updated_at)}</span>
-        <button className="app-delete-btn" onClick={() => onDelete(app.id)} title="Remove">
+        <button
+          className="app-delete-btn"
+          onClick={() => onDelete(app.id)}
+          title="Remove"
+          aria-label="Remove application"
+        >
           ✕
         </button>
       </div>
@@ -139,13 +144,13 @@ export default function Applications() {
                 <div className="funnel-count">{submitted}</div>
                 <div className="funnel-label">Applied</div>
               </div>
-              <span className="funnel-arrow">→</span>
+              <span className="funnel-arrow" aria-hidden="true">→</span>
               <div className="funnel-stage">
                 <div className="funnel-count">{interviewing}</div>
                 <div className="funnel-label">Interview</div>
                 <div className="funnel-rate">{interviewRate}%</div>
               </div>
-              <span className="funnel-arrow">→</span>
+              <span className="funnel-arrow" aria-hidden="true">→</span>
               <div className="funnel-stage">
                 <div className="funnel-count">{offers}</div>
                 <div className="funnel-label">Offer</div>

@@ -90,6 +90,7 @@ export default function Chat() {
           <input
             className="analyze-title"
             placeholder="Ask about the job market…"
+            aria-label="Ask about the job market"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") send(); }}

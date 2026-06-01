@@ -479,11 +479,12 @@ export default function JobDetail() {
           </div>
         )}
 
-        {/* Company brief (LLM, no CV needed) */}
-        <CompanyBrief jobId={id} company={job.company} />
+        {/* Company brief (LLM, no CV needed). key={id} forces a fresh state when
+            navigating job→job (e.g. via Similar roles) so stale output never sticks. */}
+        <CompanyBrief key={id} jobId={id} company={job.company} />
 
         {/* RAG Assistant */}
-        <RagPanel jobId={id} />
+        <RagPanel key={id} jobId={id} />
 
         {/* Similar roles (embedding-based) */}
         <SimilarJobs jobId={id} />

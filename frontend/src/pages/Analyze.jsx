@@ -53,12 +53,14 @@ export default function Analyze() {
           <input
             className="analyze-title"
             placeholder="Job title (optional — improves accuracy)"
+            aria-label="Job title (optional)"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
           <textarea
             className="analyze-text"
             placeholder="Paste the full job description here…"
+            aria-label="Job description to analyze"
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={10}

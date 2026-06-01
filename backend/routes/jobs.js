@@ -110,6 +110,9 @@ router.get("/", async (req, res) => {
         pages: Math.ceil(total / limit),
         jobs,
         sort: "match",
+        // total counts only the scored window; flag when the cap was hit so the
+        // UI can say "ranked the most recent N" rather than implying it ranked all.
+        capped: candidates.length >= MAX_SCORED,
       });
     }
 

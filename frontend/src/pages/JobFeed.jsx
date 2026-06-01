@@ -127,8 +127,13 @@ export default function JobFeed() {
   );
 
   useEffect(() => {
+    const ctrl = new AbortController();
+    let active = true; // guard against a stale (aborted) response landing late
     setLoading(true);
     setError(null);
+
+    const onError = (e) => { if (active && e.name !== "AbortError") setError(e.message); };
+    const onDone  = () => { if (active) setLoading(false); };
 
     // Semantic mode: rank by meaning over embeddings (ignores filters/pagination).
     if (smart && q.trim().length >= 3) {
@@ -136,20 +141,21 @@ export default function JobFeed() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ q }),
+        signal: ctrl.signal,
       })
         .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-        .then((data) =>
-          setResult({
+        .then((data) => {
+          if (active) setResult({
             jobs: data.jobs || [],
             total: (data.jobs || []).length,
             pages: 1,
             semantic: true,
             note: data.note,
-          })
-        )
-        .catch((e) => setError(e.message))
-        .finally(() => setLoading(false));
-      return;
+          });
+        })
+        .catch(onError)
+        .finally(onDone);
+      return () => { active = false; ctrl.abort(); };
     }
 
     const params = new URLSearchParams();
@@ -165,11 +171,12 @@ export default function JobFeed() {
     params.set("page", page);
     params.set("limit", "25");
 
-    fetch(`/api/jobs?${params}`)
+    fetch(`/api/jobs?${params}`, { signal: ctrl.signal })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(setResult)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .then((data) => { if (active) setResult(data); })
+      .catch(onError)
+      .finally(onDone);
+    return () => { active = false; ctrl.abort(); };
   }, [country, langMatch, employment, remote, q, page, sort, strongOnly, smart]);
 
   // Auto-launch tour for first-time users (after data loads)
@@ -185,9 +192,10 @@ export default function JobFeed() {
       .catch(() => setHasCv(false));
   }, []);
 
-  // Fetch CV-match scores for the current page of jobs whenever jobs or CV status change
+  // Fetch CV-match scores for the current page of jobs whenever jobs or CV status change.
+  // The match sort already returns cv_match in the payload, so skip the extra round-trip there.
   useEffect(() => {
-    if (!hasCv || !result?.jobs?.length) { setScores({}); return; }
+    if (!hasCv || !result?.jobs?.length || result.sort === "match") { setScores({}); return; }
     const ids = result.jobs.map((j) => j.id).join(",");
     fetch(`/api/cv/scores?job_ids=${ids}`)
       .then((r) => r.json())
@@ -220,6 +228,7 @@ export default function JobFeed() {
                 className={`smart-toggle ${smart ? "is-active" : ""}`}
                 onClick={() => update("smart", smart ? "" : "1")}
                 title="Semantic search — rank by meaning, not keywords"
+                aria-pressed={smart}
               >
                 ✨ Smart
               </button>
@@ -307,12 +316,14 @@ export default function JobFeed() {
             <button
               className={`sort-pill ${sort !== "match" ? "is-active" : ""}`}
               onClick={() => setSort("")}
+              aria-pressed={sort !== "match"}
             >
               Newest
             </button>
             <button
               className={`sort-pill ${sort === "match" ? "is-active" : ""}`}
               onClick={() => setSort("match")}
+              aria-pressed={sort === "match"}
             >
               ★ Best match
             </button>
@@ -335,7 +346,8 @@ export default function JobFeed() {
             <strong>{result.total}</strong> jobs
             {langMatch === "good" && " · English-friendly"}
             {country && ` · ${country}`}
-            {result.sort === "match" && " · sorted by CV match"}
+            {result.sort === "match" &&
+              (result.capped ? " · ranked the 600 most recent by CV match" : " · sorted by CV match")}
             {result.semantic && " · ✨ semantic"}
             {result.pages > 1 && ` · page ${page} of ${result.pages}`}
           </div>
