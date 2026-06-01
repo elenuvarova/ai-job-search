@@ -587,6 +587,40 @@ button { cursor: pointer; font: inherit; }
 .analyze-gap-note { font-size: var(--text-xs); color: var(--text-3); margin-top: var(--space-2); }
 .rag-result-btns { display: inline-flex; gap: var(--space-2); }
 
+/* ─── Smart (semantic) search toggle ─────────────────────────────── */
+.search-input-wrap { display: flex; gap: var(--space-2); align-items: stretch; }
+.search-input-wrap input { flex: 1; }
+.smart-toggle {
+  white-space: nowrap;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  transition: all 0.15s ease;
+}
+.smart-toggle:hover { color: var(--text-1); border-color: var(--accent); }
+.smart-toggle.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ─── Similar roles ──────────────────────────────────────────────── */
+.similar-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.similar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+.similar-item:hover { border-color: var(--accent); }
+.similar-title { color: var(--text-1); font-weight: var(--weight-medium); font-size: var(--text-sm); }
+.similar-meta { color: var(--text-3); font-size: var(--text-xs); }
+
 /* ─── Description ────────────────────────────────────────────────── */
 .description-box {
   background: var(--bg-card);

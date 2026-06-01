@@ -12,6 +12,7 @@ import ragRouter from "./routes/rag.js";
 import applicationsRouter from "./routes/applications.js";
 import analyticsRouter from "./routes/analytics.js";
 import analyzeRouter from "./routes/analyze.js";
+import searchRouter from "./routes/search.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,6 +43,7 @@ app.use("/api/jobs", ragRouter);
 app.use("/api/applications", applicationsRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/analyze", analyzeRouter);
+app.use("/api/search", searchRouter);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "public")));

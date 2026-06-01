@@ -2,6 +2,8 @@ import { Router } from "express";
 import { Op } from "sequelize";
 import { Job, Source, JobClassification, JobSkill } from "../models/index.js";
 import { getActiveCvTerms, scoreJobText } from "../rag/cvMatch.js";
+import { embed } from "../rag/embed.js";
+import { rankByEmbedding } from "../rag/jobSearch.js";
 
 const router = Router();
 
@@ -131,6 +133,34 @@ router.get("/", async (req, res) => {
       pages: Math.ceil(count / limit),
       jobs: rows,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/jobs/:id/similar — nearest jobs by embedding cosine.
+router.get("/:id/similar", async (req, res) => {
+  try {
+    const job = await Job.findByPk(req.params.id, {
+      attributes: ["id", "title", "description", "embedding"],
+    });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    const vec = Array.isArray(job.embedding)
+      ? job.embedding
+      : await embed(`${job.title || ""}\n${(job.description || "").slice(0, 2000)}`);
+
+    const ranked = await rankByEmbedding(vec, { excludeId: job.id, limit: 8 });
+    const ids = ranked.map((r) => r.id);
+    if (!ids.length) return res.json({ jobs: [] });
+
+    const rows = await Job.findAll({
+      where: { id: ids },
+      attributes: ["id", "title", "company", "country", "location_raw"],
+      include: [{ model: JobClassification, attributes: ["role_family", "language_match"] }],
+    });
+    const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+    res.json({ jobs: ids.map((id) => byId[id]).filter(Boolean) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

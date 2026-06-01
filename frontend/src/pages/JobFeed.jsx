@@ -94,6 +94,7 @@ export default function JobFeed() {
   const page       = parseInt(searchParams.get("page")  || "1");
   const sort       = searchParams.get("sort") === "match" ? "match" : "";
   const strongOnly = searchParams.get("min_match") === "25";
+  const smart      = searchParams.get("smart") === "1";
 
   const hasFilters = q || country || langMatch || employment || remote;
 
@@ -126,6 +127,31 @@ export default function JobFeed() {
   );
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    // Semantic mode: rank by meaning over embeddings (ignores filters/pagination).
+    if (smart && q.trim().length >= 3) {
+      fetch("/api/search/semantic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q }),
+      })
+        .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+        .then((data) =>
+          setResult({
+            jobs: data.jobs || [],
+            total: (data.jobs || []).length,
+            pages: 1,
+            semantic: true,
+            note: data.note,
+          })
+        )
+        .catch((e) => setError(e.message))
+        .finally(() => setLoading(false));
+      return;
+    }
+
     const params = new URLSearchParams();
     if (country)    params.set("country", country);
     if (langMatch)  params.set("language_match", langMatch);
@@ -139,15 +165,12 @@ export default function JobFeed() {
     params.set("page", page);
     params.set("limit", "25");
 
-    setLoading(true);
-    setError(null);
-
     fetch(`/api/jobs?${params}`)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setResult)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [country, langMatch, employment, remote, q, page, sort, strongOnly]);
+  }, [country, langMatch, employment, remote, q, page, sort, strongOnly, smart]);
 
   // Auto-launch tour for first-time users (after data loads)
   useEffect(() => {
@@ -184,13 +207,23 @@ export default function JobFeed() {
         <div className="filters" data-tour="filters">
           <div className="filter-group search-group">
             <label className="filter-label" htmlFor="f-q">Search</label>
-            <input
-              id="f-q"
-              type="text"
-              placeholder="Job title…"
-              value={q}
-              onChange={(e) => update("q", e.target.value)}
-            />
+            <div className="search-input-wrap">
+              <input
+                id="f-q"
+                type="text"
+                placeholder={smart ? "Describe what you want…" : "Job title…"}
+                value={q}
+                onChange={(e) => update("q", e.target.value)}
+              />
+              <button
+                type="button"
+                className={`smart-toggle ${smart ? "is-active" : ""}`}
+                onClick={() => update("smart", smart ? "" : "1")}
+                title="Semantic search — rank by meaning, not keywords"
+              >
+                ✨ Smart
+              </button>
+            </div>
           </div>
 
           <div className="filter-group">
@@ -268,7 +301,7 @@ export default function JobFeed() {
         </div>
 
         {/* Sort */}
-        {hasCv && (
+        {hasCv && !smart && (
           <div className="sort-bar">
             <span className="sort-bar-label">Sort</span>
             <button
@@ -303,8 +336,13 @@ export default function JobFeed() {
             {langMatch === "good" && " · English-friendly"}
             {country && ` · ${country}`}
             {result.sort === "match" && " · sorted by CV match"}
+            {result.semantic && " · ✨ semantic"}
             {result.pages > 1 && ` · page ${page} of ${result.pages}`}
           </div>
+        )}
+
+        {result?.semantic && result?.note && (
+          <div className="status-msg">{result.note}</div>
         )}
 
         {loading && <div className="status-msg">Loading…</div>}

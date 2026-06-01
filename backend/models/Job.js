@@ -17,6 +17,7 @@ const Job = sequelize.define(
     posted_at: { type: DataTypes.DATE },
     raw_json: { type: DataTypes.JSON },
     dedupe_hash: { type: DataTypes.STRING(40) },
+    embedding: { type: DataTypes.JSON }, // float[768] from gemini-embedding-001; null until backfilled
   },
   {
     tableName: "jobs",

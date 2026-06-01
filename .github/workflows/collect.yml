@@ -29,7 +29,7 @@ jobs:
 
       - name: Run collector
         working-directory: backend
-        run: node scripts/collect.js && node scripts/classify.js
+        run: node scripts/collect.js && node scripts/classify.js && node scripts/embedJobs.js
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}

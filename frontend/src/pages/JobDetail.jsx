@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
 import SourceCredit from "../components/SourceCredit.jsx";
@@ -319,6 +319,39 @@ function CompanyBrief({ jobId, company }) {
   );
 }
 
+function SimilarJobs({ jobId }) {
+  const [jobs, setJobs] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/jobs/${jobId}/similar`)
+      .then((r) => r.json())
+      .then((d) => setJobs(d.jobs || []))
+      .catch(() => setJobs([]));
+  }, [jobId]);
+
+  if (!jobs || jobs.length === 0) return null;
+
+  return (
+    <div className="detail-section">
+      <div className="detail-section-title">Similar roles</div>
+      <div className="similar-list">
+        {jobs.map((j) => (
+          <Link key={j.id} to={`/jobs/${j.id}`} className="similar-item">
+            <span className="similar-title">{j.title}</span>
+            <span className="similar-meta">
+              {j.company}
+              {j.JobClassification?.role_family &&
+              j.JobClassification.role_family !== "Other / Unclear"
+                ? ` · ${j.JobClassification.role_family}`
+                : ""}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -451,6 +484,9 @@ export default function JobDetail() {
 
         {/* RAG Assistant */}
         <RagPanel jobId={id} />
+
+        {/* Similar roles (embedding-based) */}
+        <SimilarJobs jobId={id} />
 
         {/* Bottom apply anchor */}
         {job.apply_url && (
