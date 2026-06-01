@@ -17,7 +17,13 @@ function relativeTime(iso) {
   return `${Math.floor(d / 30)}mo ago`;
 }
 
-function JobCard({ job, isFirst }) {
+function CvScoreBadge({ score }) {
+  if (!score || score < 10) return null;
+  const level = score >= 25 ? "high" : "mid";
+  return <span className={`cv-score-badge ${level}`}>{score}% match</span>;
+}
+
+function JobCard({ job, isFirst, cvScore }) {
   const c = job.JobClassification;
   return (
     <Link
@@ -27,9 +33,12 @@ function JobCard({ job, isFirst }) {
     >
       <div className="job-card-top">
         <div className="job-title">{job.title}</div>
-        <span data-tour={isFirst ? "lang-badge" : undefined}>
-          <LanguageBadge match={c?.language_match} />
-        </span>
+        <div className="job-card-badges">
+          <CvScoreBadge score={cvScore} />
+          <span data-tour={isFirst ? "lang-badge" : undefined}>
+            <LanguageBadge match={c?.language_match} />
+          </span>
+        </div>
       </div>
 
       <div className="job-meta">
@@ -71,6 +80,8 @@ export default function JobFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [showTour, setShowTour] = useState(false);
+  const [hasCv, setHasCv]     = useState(null); // null=unknown, false=none, true=yes
+  const [scores, setScores]   = useState({});
 
   const q          = searchParams.get("q")              || "";
   const country    = searchParams.get("country")        || "";
@@ -120,6 +131,24 @@ export default function JobFeed() {
   useEffect(() => {
     if (!loading && result && shouldShowTour()) setShowTour(true);
   }, [loading, result]);
+
+  // Check once on mount whether a CV is uploaded
+  useEffect(() => {
+    fetch("/api/cv")
+      .then((r) => r.json())
+      .then((cv) => setHasCv(!!cv))
+      .catch(() => setHasCv(false));
+  }, []);
+
+  // Fetch CV-match scores for the current page of jobs whenever jobs or CV status change
+  useEffect(() => {
+    if (!hasCv || !result?.jobs?.length) { setScores({}); return; }
+    const ids = result.jobs.map((j) => j.id).join(",");
+    fetch(`/api/cv/scores?job_ids=${ids}`)
+      .then((r) => r.json())
+      .then((data) => setScores(data.scores || {}))
+      .catch(() => setScores({}));
+  }, [hasCv, result]);
 
   return (
     <div>
@@ -231,7 +260,7 @@ export default function JobFeed() {
         )}
 
         {result?.jobs?.map((job, i) => (
-          <JobCard key={job.id} job={job} isFirst={i === 0} />
+          <JobCard key={job.id} job={job} isFirst={i === 0} cvScore={scores[job.id]} />
         ))}
 
         {result && result.pages > 1 && (
