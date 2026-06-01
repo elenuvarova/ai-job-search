@@ -8,6 +8,7 @@ import { collectArbeitnow } from "../collectors/arbeitnow.js";
 import { collectRemotive } from "../collectors/remotive.js";
 import { collectMuse } from "../collectors/muse.js";
 import { collectRemoteok } from "../collectors/remoteok.js";
+import { collectJobicy } from "../collectors/jobicy.js";
 import { collectGreenhouse } from "../collectors/greenhouse.js";
 import { collectLever } from "../collectors/lever.js";
 import { collectRecruitee } from "../collectors/recruitee.js";
@@ -56,6 +57,13 @@ const SOURCES = [
     attribution_html:
       '<a href="https://remoteok.com" rel="noopener">Remote jobs via RemoteOK</a>',
     collect: collectRemoteok,
+  },
+  {
+    key: "jobicy",
+    label: "Jobicy",
+    attribution_html:
+      '<a href="https://jobicy.com" rel="noopener">Remote jobs via Jobicy</a>',
+    collect: collectJobicy,
   },
   {
     key: "greenhouse",

@@ -5,7 +5,10 @@ import LanguageBadge from "../components/LanguageBadge.jsx";
 import SourceCredit from "../components/SourceCredit.jsx";
 import Tour, { shouldShowTour } from "../components/Tour.jsx";
 
-const COUNTRY_FLAGS = { BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺" };
+const COUNTRY_FLAGS = {
+  BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺",
+  GB: "🇬🇧", DE: "🇩🇪", FR: "🇫🇷", ES: "🇪🇸", IT: "🇮🇹", AT: "🇦🇹", PL: "🇵🇱",
+};
 
 function relativeTime(iso) {
   if (!iso) return "";
@@ -175,9 +178,20 @@ export default function JobFeed() {
             <label className="filter-label" htmlFor="f-country">Country</label>
             <select id="f-country" value={country} onChange={(e) => update("country", e.target.value)}>
               <option value="">All</option>
-              <option value="BE">🇧🇪 Belgium</option>
-              <option value="NL">🇳🇱 Netherlands</option>
-              <option value="LU">🇱🇺 Luxembourg</option>
+              <optgroup label="Benelux">
+                <option value="BE">🇧🇪 Belgium</option>
+                <option value="NL">🇳🇱 Netherlands</option>
+                <option value="LU">🇱🇺 Luxembourg</option>
+              </optgroup>
+              <optgroup label="EU / UK · remote & contract">
+                <option value="GB">🇬🇧 United Kingdom</option>
+                <option value="DE">🇩🇪 Germany</option>
+                <option value="FR">🇫🇷 France</option>
+                <option value="ES">🇪🇸 Spain</option>
+                <option value="IT">🇮🇹 Italy</option>
+                <option value="AT">🇦🇹 Austria</option>
+                <option value="PL">🇵🇱 Poland</option>
+              </optgroup>
             </select>
           </div>
 

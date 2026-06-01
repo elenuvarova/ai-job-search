@@ -1,12 +1,12 @@
 # Benelux AI Job Scout
 
-A personal, **$0-to-run** job-search intelligence tool for ML Engineer / Data Scientist / AI Engineer roles across **Belgium, Netherlands, and Luxembourg**. It collects vacancies from free sources, normalizes messy multilingual job data, flags **language blockers** (Dutch / French / German / Luxembourgish), scores each role against your CV, and helps you track and tailor applications.
+A personal, **$0-to-run** job-search intelligence tool for ML Engineer / Data Scientist / AI Engineer roles across **Belgium, Netherlands, and Luxembourg** — plus **remote & contract** roles across the wider **EU and UK**. It collects vacancies from free sources, normalizes messy multilingual job data, flags **language blockers** (Dutch / French / German / Luxembourgish), scores each role against your CV, and helps you track and tailor applications.
 
 See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the design rationale and a "built vs planned" reconciliation.
 
 ## What it does
 
-- **Collects** ML/Data/AI jobs daily from **11 free sources** into Postgres (see below).
+- **Collects** ML/Data/AI jobs daily from **12 free sources** into Postgres (see below). Benelux is covered fully; other EU countries + the UK are filtered to **remote or contract** roles.
 - **Classifies** each posting with rule-based NLP: role family, seniority, employment type, remote type, and a **language-requirement blocker** (is the local language a hard requirement or a nice-to-have?).
 - **Scores** each job against your uploaded CV (term-overlap match %, shown as a badge in the feed).
 - **RAG assistant**: upload a CV (PDF/DOCX) → tailor it to a job, draft a cover letter, get gap analysis and interview prep (Gemini, with a Groq fallback).
@@ -27,9 +27,9 @@ All zero-cost (free key or zero-auth):
 
 | Source | Auth | Notes |
 |---|---|---|
-| Adzuna | free key | Native BE/NL/LU + salary |
+| Adzuna | free key | Native BE/NL/LU + salary; UK/EU filtered to remote & contract |
 | **EURES** | zero-auth | EU portal — **native Luxembourg** + large BE/NL volume |
-| Arbeitnow · Remotive · RemoteOK | zero-auth | EU / remote feeds |
+| Arbeitnow · Remotive · RemoteOK · Jobicy | zero-auth | EU / remote feeds |
 | The Muse | free key | Curated employers |
 | Greenhouse · Lever · Recruitee · SmartRecruiters | zero-auth | Curated Benelux company boards |
 | HN "Who's Hiring" | zero-auth | Monthly Hacker News thread |

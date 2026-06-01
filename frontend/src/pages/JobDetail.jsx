@@ -4,7 +4,10 @@ import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
 import SourceCredit from "../components/SourceCredit.jsx";
 
-const COUNTRY_FLAGS = { BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺" };
+const COUNTRY_FLAGS = {
+  BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺",
+  GB: "🇬🇧", DE: "🇩🇪", FR: "🇫🇷", ES: "🇪🇸", IT: "🇮🇹", AT: "🇦🇹", PL: "🇵🇱",
+};
 
 function relativeTime(iso) {
   if (!iso) return "";
