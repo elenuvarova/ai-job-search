@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { sequelize, dbKind } from "./db.js";
 import { syncModels } from "./models/index.js";
+import { basicAuth, basicAuthEnabled } from "./middleware/basicAuth.js";
 import jobsRouter from "./routes/jobs.js";
 import collectRouter from "./routes/collect.js";
 import classifyRouter from "./routes/classify.js";
@@ -46,6 +47,12 @@ app.use(
   })
 );
 app.use(compression());
+
+// HTTP Basic Auth gate. Mounted EARLY: it protects everything (SPA + every
+// /api/* route) and only exempts /api/health for the container HEALTHCHECK.
+// When BASIC_AUTH_USER/PASSWORD are unset it passes through (auth disabled).
+app.use(basicAuth);
+
 app.use(express.json({ limit: "1mb" })); // room for pasted JDs / chat payloads
 
 app.get("/api/health", async (req, res) => {
@@ -100,5 +107,6 @@ try {
 
 app.listen(PORT, () => {
   console.log(`db: ${dbKind}`);
+  console.log(`basic auth: ${basicAuthEnabled() ? "ENABLED" : "DISABLED (BASIC_AUTH_USER/PASSWORD not set)"}`);
   console.log(`Server listening on port ${PORT}`);
 });

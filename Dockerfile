@@ -10,10 +10,14 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2 — install backend production deps
+# --omit=optional drops sqlite3 (an optionalDependency used only for LOCAL dev)
+# and its native build chain (node-gyp -> cacache -> node-tar), which npm audit
+# flags with HIGH advisories. Prod runs on Postgres via the regular `pg` driver,
+# so the shipped image never needs sqlite3.
 FROM node:20-alpine AS backend-deps
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --omit=optional
 
 # Stage 3 — runtime
 FROM node:20-alpine AS runtime
