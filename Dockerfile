@@ -1,8 +1,11 @@
 # Stage 1 — build frontend
+# No build ARGs/ENVs here: the Vite frontend uses no VITE_* variables, and the
+# backend's secrets (Adzuna/Gemini/Groq/Muse keys) are RUNTIME-only. They arrive
+# via Coolify runtime env (process.env) and must never be baked into image layers.
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
@@ -10,7 +13,7 @@ RUN npm run build
 FROM node:20-alpine AS backend-deps
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Stage 3 — runtime
 FROM node:20-alpine AS runtime
@@ -20,5 +23,7 @@ WORKDIR /app/backend
 COPY backend/ ./
 COPY --from=backend-deps /app/backend/node_modules ./node_modules
 COPY --from=frontend-build /app/frontend/dist ./public
+USER node
 EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD wget -qO- http://127.0.0.1:3001/api/health || exit 1
 CMD ["node", "server.js"]

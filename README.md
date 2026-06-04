@@ -19,10 +19,10 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the design rationale an
 
 - **Frontend:** React 18 + Vite 5 (JavaScript), React Router
 - **Backend:** Node.js + Express, ES modules, Sequelize ORM
-- **Database:** **Neon** Postgres in production, SQLite in local dev (dialect chosen automatically from `DATABASE_URL`)
+- **Database:** Postgres in production, SQLite in local dev (dialect chosen automatically from `DATABASE_URL`)
 - **Scheduled collector:** **GitHub Actions** cron (public repo → free unlimited minutes) running `backend/scripts/collect.js`
 - **AI:** Gemini 2.5 Flash (primary) + Groq Llama 3.3 70B (fallback); embeddings via Gemini `gemini-embedding-001`
-- **Web service:** Render free web service (serves the API + built React app)
+- **Web service:** single Docker container (`node server.js`) serving the API + built React SPA on **port 3001**, deployed on Coolify (no nginx)
 
 ## Job sources
 
@@ -72,7 +72,7 @@ Copy `.env.example` and fill in (all free to obtain):
 
 | Var | Used for |
 |---|---|
-| `DATABASE_URL` | Neon connection string (omit locally → SQLite) |
+| `DATABASE_URL` | Postgres connection string (omit locally → SQLite) |
 | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Adzuna source |
 | `GEMINI_API_KEY` | classification tail, CV embeddings, RAG |
 | `GROQ_API_KEY` | LLM fallback |
@@ -81,11 +81,25 @@ Secrets live in `.env` (gitignored) locally and in **GitHub Secrets** for the cr
 
 ## Deploy
 
-- **Web service:** Render free web service via `render.yaml` (Docker). Set `DATABASE_URL` (Neon) as an env var in the dashboard.
-- **Database:** create a free Neon project, paste its connection string into Render env + GitHub Secrets. Neon's free tier never expires (unlike Render's free Postgres, which is why the DB lives on Neon).
-- **Collector:** `.github/workflows/collect.yml` runs daily on GitHub Actions and writes to Neon.
+Deployed on **Coolify** as a single Docker container — the multi-stage `Dockerfile`
+builds the Vite frontend, installs backend production deps, and runs `node server.js`,
+which serves both the `/api` routes and the built SPA on **port 3001**. No nginx.
 
-**Free-tier note:** the Render web service sleeps after ~15 min idle (~60 s cold start) — fine for a personal tool, since the heavy collection runs in Actions, not the web service.
+- **Web service:** in Coolify, create a resource from this GitHub repo with build pack
+  = Dockerfile. Point the app domain at it; Coolify/Traefik terminates TLS and proxies
+  to port 3001. The image ships a `HEALTHCHECK` that probes `/api/health`, so Coolify
+  reports container health automatically.
+- **Secrets / config:** set `DATABASE_URL`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`,
+  `GEMINI_API_KEY`, `GROQ_API_KEY`, and (optional) `THE_MUSE_API_KEY` in Coolify's
+  **Environment Variables** panel. These are read at runtime from `process.env` — they
+  are **not** build args and must never be baked into the image. `NODE_ENV=production`
+  is already set in the image.
+- **Database:** provision a Postgres database (Coolify-managed Postgres on the internal
+  Docker network, or an external managed Postgres). Put its connection string in
+  `DATABASE_URL`. Append `?sslmode=require` only if the provider requires TLS; the
+  backend enables SSL automatically when the URL asks for it.
+- **Collector:** `.github/workflows/collect.yml` runs daily on GitHub Actions and writes
+  to the same Postgres. Store the same secrets in **GitHub Secrets** for that workflow.
 
 ## API (high level)
 
