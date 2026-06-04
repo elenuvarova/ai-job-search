@@ -127,14 +127,23 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // ── Default: newest first ──
+    // ── Default sorts (CV-independent), whitelisted server-side so user input
+    // never reaches the order clause directly. ──
+    const SORT_ORDERS = {
+      newest: RECENCY_ORDER,
+      oldest: [[sequelize.literal("posted_at IS NULL"), "ASC"], ["posted_at", "ASC"]],
+      company: [[sequelize.literal("company IS NULL OR company = ''"), "ASC"], ["company", "ASC"]],
+      title: [["title", "ASC"]],
+    };
+    const sortKey = SORT_ORDERS[req.query.sort] ? req.query.sort : "newest";
+
     const { count, rows } = await Job.findAndCountAll({
       where: jobWhere,
       include: [
         sourceInclude(["key", "label", "attribution_html"]),
         classInclude(CLASS_ATTRS),
       ],
-      order: RECENCY_ORDER,
+      order: SORT_ORDERS[sortKey],
       limit,
       offset,
       distinct: true,
@@ -146,6 +155,7 @@ router.get("/", async (req, res) => {
       limit,
       pages: Math.ceil(count / limit),
       jobs: rows,
+      sort: sortKey,
     });
   } catch (err) {
     console.error("[jobs] list failed:", err);
