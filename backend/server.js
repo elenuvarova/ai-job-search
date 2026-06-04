@@ -16,6 +16,7 @@ import applicationsRouter from "./routes/applications.js";
 import analyticsRouter from "./routes/analytics.js";
 import analyzeRouter from "./routes/analyze.js";
 import searchRouter from "./routes/search.js";
+import { startScheduler } from "./scheduler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -109,4 +110,5 @@ app.listen(PORT, () => {
   console.log(`db: ${dbKind}`);
   console.log(`basic auth: ${basicAuthEnabled() ? "ENABLED" : "DISABLED (BASIC_AUTH_USER/PASSWORD not set)"}`);
   console.log(`Server listening on port ${PORT}`);
+  startScheduler();
 });
