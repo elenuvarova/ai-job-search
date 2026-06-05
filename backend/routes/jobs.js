@@ -29,6 +29,19 @@ const MAX_SCORED = 600;
 // Filters: country, source, q (title search), language_match, employment_type,
 //          remote_type, role_family, seniority, blocker (bool)
 // Pagination: page (1-based), limit (default 50, max 100)
+// GET /api/jobs/new-today — count of jobs first collected since 00:00 UTC today.
+router.get("/new-today", async (req, res) => {
+  try {
+    const start = new Date();
+    start.setUTCHours(0, 0, 0, 0);
+    const count = await Job.count({ where: { createdAt: { [Op.gte]: start } } });
+    res.json({ new_today: count, since: start.toISOString() });
+  } catch (err) {
+    console.error("[jobs] new-today failed:", err);
+    res.status(500).json({ error: "internal error" });
+  }
+});
+
 router.get("/", async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
