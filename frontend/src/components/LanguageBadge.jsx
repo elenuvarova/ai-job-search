@@ -11,7 +11,8 @@ export default function LanguageBadge({ match, large = false }) {
   const { icon, label, tip } = CONFIG[key] || CONFIG.unknown;
   return (
     <span className={`lang-badge ${key}`} title={tip} aria-label={tip}>
-      {icon} {large ? label : label}
+      <span aria-hidden="true">{icon}</span>
+      {large && <span>{label}</span>}
     </span>
   );
 }

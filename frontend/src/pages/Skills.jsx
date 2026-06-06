@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import { SkeletonFeed, ErrorState, EmptyState } from "../components/States.jsx";
+import { usePageTitle, SkipLink } from "../components/PageChrome.jsx";
 
 const COUNTRIES = [
   { value: "", label: "All countries" },
@@ -37,8 +38,8 @@ function fitLabel(text, r) {
     return { fs, lines: [trunc(l1), trunc(l2)].filter(Boolean) };
   }
 
-  // single long word — shrink the font to fit (floor 7px)
-  fs = Math.max(7, Math.min(fs, innerW / (text.length * 0.56)));
+  // single long word — shrink the font to fit (floor 9px for legibility)
+  fs = Math.max(9, Math.min(fs, innerW / (text.length * 0.56)));
   const m = Math.floor(innerW / charW(fs));
   return { fs, lines: [text.length > m ? text.slice(0, m - 1) + "…" : text] };
 }
@@ -56,8 +57,13 @@ function SkillGraph({ skills }) {
   const maxCount = skills[0]?.count || 1;
   const maxPct = Math.max(...skills.map((s) => s.pct), 1);
 
+  // Honour the OS "reduce motion" setting: render the bubbles static, no physics.
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
   const startLoop = () => {
-    if (runningRef.current) return;
+    if (reduceMotion || runningRef.current) return;
     runningRef.current = true;
     rafRef.current = requestAnimationFrame(tick);
   };
@@ -139,7 +145,10 @@ function SkillGraph({ skills }) {
     if (!dragRef.current) return;
     const p = toSvg(e);
     const n = nodesRef.current.find((nn) => nn.id === dragRef.current.id);
-    if (n) { n.x = p.x; n.y = p.y; n.vx = 0; n.vy = 0; }
+    if (n) {
+      n.x = p.x; n.y = p.y; n.vx = 0; n.vy = 0;
+      if (reduceMotion) render((t) => (t + 1) % 1e6); // no RAF loop drives repaint
+    }
   };
   const endDrag = () => { dragRef.current = null; startLoop(); };
 
@@ -194,6 +203,7 @@ export default function Skills() {
   const [error, setError]     = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const country = searchParams.get("country") || "";
+  usePageTitle("Skills");
 
   useEffect(() => {
     setLoading(true);
@@ -208,8 +218,9 @@ export default function Skills() {
 
   return (
     <div>
+      <SkipLink />
       <Navbar />
-      <div className="page">
+      <main id="main" className="page">
         <div className="page-header">
           <h1 className="page-title">Skill Gap Radar</h1>
           {data && (
@@ -254,9 +265,28 @@ export default function Skills() {
             <p className="feed-stats" style={{ marginTop: "var(--space-4)" }}>
               Percentages = share of indexed jobs mentioning the skill.
             </p>
+
+            {/* Accessible text alternative — the same data without a pointer */}
+            <section className="skill-table-section">
+              <h2 className="detail-section-title">Top skills by demand</h2>
+              <ol className="skill-table">
+                {data.skills.map((s) => (
+                  <li key={s.skill} className="skill-table-row">
+                    <span className="skill-table-name">{s.skill}</span>
+                    <span className="skill-table-bar" aria-hidden="true">
+                      <span
+                        className="skill-table-bar-fill"
+                        style={{ width: `${Math.min(100, s.pct)}%` }}
+                      />
+                    </span>
+                    <span className="skill-table-pct">{s.pct}% of jobs</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

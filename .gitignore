@@ -8,3 +8,4 @@ backend/public/
 .DS_Store
 *.sqlite
 *.sqlite-journal
+.playwright-mcp/

@@ -1,5 +1,6 @@
-// Dialect is picked from DATABASE_URL so the same config works locally (SQLite)
-// and on Render (Postgres) without any code changes.
+// Dialect is picked from DATABASE_URL so the same config works locally (SQLite,
+// when DATABASE_URL is unset) and in production (Postgres) without any code
+// changes.
 import { Sequelize } from "sequelize";
 
 let sequelize;
@@ -9,8 +10,8 @@ const url = process.env.DATABASE_URL || "";
 
 if (url.startsWith("postgres://") || url.startsWith("postgresql://")) {
   dbKind = "postgres";
-  // Enable SSL only when the connection string asks for it (e.g. Neon's
-  // ?sslmode=require). The internal Coolify Postgres does NOT support SSL,
+  // Enable SSL only when the connection string asks for it (?sslmode=require,
+  // e.g. an external managed provider). The internal Coolify Postgres does NOT support SSL,
   // so forcing it there makes the connection fail and the app crash-loop.
   const sslOptions = /sslmode=require/i.test(url)
     ? { dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } }

@@ -9,7 +9,7 @@ export async function rankByEmbedding(queryVec, { excludeId = null, limit = 25 }
   if (!Array.isArray(queryVec) || !queryVec.length) return [];
 
   const rows = await Job.findAll({
-    where: { embedding: { [Op.ne]: null } },
+    where: { embedding: { [Op.not]: null } },
     attributes: ["id", "embedding"],
   });
 

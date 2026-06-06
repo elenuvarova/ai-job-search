@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
 import { SkeletonFeed, ErrorState } from "../components/States.jsx";
+import { usePageTitle, SkipLink } from "../components/PageChrome.jsx";
 
 const STATUSES = ["saved", "need_cv", "applied", "interview", "offer", "rejected", "archived"];
 
@@ -88,6 +89,7 @@ export default function Applications() {
   const [error, setError]     = useState(null);
   const [filter, setFilter]   = useState("all");
   const [reloadKey, setReloadKey] = useState(0);
+  usePageTitle("Applications");
 
   useEffect(() => {
     setLoading(true);
@@ -130,8 +132,9 @@ export default function Applications() {
 
   return (
     <div>
+      <SkipLink />
       <Navbar />
-      <div className="page">
+      <main id="main" className="page">
         <div className="page-header">
           <h1 className="page-title">Application Tracker</h1>
           <span className="feed-stats">
@@ -213,7 +216,7 @@ export default function Applications() {
             />
           ))}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
