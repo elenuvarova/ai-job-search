@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import helmet from "helmet";
 import compression from "compression";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 import { sequelize, dbKind } from "./db.js";
@@ -33,8 +34,12 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         // The React UI renders inline style={{}} props as inline style attributes,
-        // so style-src needs 'unsafe-inline'. Scripts are external (Vite hashed bundles).
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        // so style-src needs 'unsafe-inline'. Google Fonts (Inter) ships its
+        // @font-face CSS from fonts.googleapis.com and the woff2 from fonts.gstatic.com.
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        // Scripts stay strictly 'self' — the pre-paint theme init is an external
+        // /theme-init.js file, and Vite bundles are hashed/external. No inline scripts.
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", "data:"],
         connectSrc: ["'self'"],
@@ -56,6 +61,19 @@ app.use(basicAuth);
 
 app.use(express.json({ limit: "1mb" })); // room for pasted JDs / chat payloads
 
+// Throttle the expensive endpoints — each one fans out to the LLM / embedding
+// APIs (apply-kit alone is 3 completions per request) or to dozens of job-source
+// fetches. Without this, a loop trivially drains the free Gemini/Groq quota or
+// runs up cost. Keyed by client IP (trust proxy is set, so this is the real IP
+// behind Traefik). Read-only feed/detail GETs are NOT limited.
+const llmLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20, // 20 expensive calls/min/IP
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Too many requests — please slow down and try again shortly." },
+});
+
 app.get("/api/health", async (req, res) => {
   try {
     await sequelize.authenticate();
@@ -67,14 +85,17 @@ app.get("/api/health", async (req, res) => {
 });
 
 app.use("/api/jobs", jobsRouter);
-app.use("/api/collect", collectRouter);
-app.use("/api/classify", classifyRouter);
+app.use("/api/collect", llmLimiter, collectRouter);
+app.use("/api/classify", llmLimiter, classifyRouter);
 app.use("/api/cv", cvRouter);
-app.use("/api/jobs", ragRouter);
+// ragRouter holds the per-job LLM actions (tailor-cv, cover letter, apply-kit,
+// company-brief). It shares the /api/jobs base, but the read-only feed/detail
+// routes above resolve first, so the limiter only ever applies to RAG actions.
+app.use("/api/jobs", llmLimiter, ragRouter);
 app.use("/api/applications", applicationsRouter);
 app.use("/api/analytics", analyticsRouter);
-app.use("/api/analyze", analyzeRouter);
-app.use("/api/search", searchRouter);
+app.use("/api/analyze", llmLimiter, analyzeRouter);
+app.use("/api/search", llmLimiter, searchRouter);
 
 if (process.env.NODE_ENV === "production") {
   const publicDir = path.join(__dirname, "public");

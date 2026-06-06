@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
+import { usePageTitle, SkipLink } from "../components/PageChrome.jsx";
 
 const SUGGESTIONS = [
   "Senior ML roles in NL that don't need Dutch",
@@ -13,6 +14,7 @@ export default function Chat() {
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const endRef = useRef();
+  usePageTitle("Ask");
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,8 +45,9 @@ export default function Chat() {
 
   return (
     <div>
+      <SkipLink />
       <Navbar />
-      <div className="page">
+      <main id="main" className="page">
         <div className="page-header">
           <h1 className="page-title">Ask your job market</h1>
         </div>
@@ -52,7 +55,7 @@ export default function Chat() {
           Ask in plain language — answers are grounded in the jobs we've collected (and your CV, if uploaded).
         </p>
 
-        <div className="chat-log">
+        <div className="chat-log" role="log" aria-live="polite">
           {messages.length === 0 && !loading && (
             <div className="chat-empty">
               {SUGGESTIONS.map((s) => (
@@ -99,7 +102,7 @@ export default function Chat() {
             Ask
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

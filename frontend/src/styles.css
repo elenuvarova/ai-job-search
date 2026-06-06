@@ -20,6 +20,10 @@
 
   --tracking-caps: 0.08em; /* uppercase section labels */
 
+  /* Type families */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", system-ui, -apple-system, sans-serif;
+
   /* Spacing — 4 px grid */
   --space-1: 4px;
   --space-2: 8px;
@@ -34,6 +38,7 @@
   --radius-md:  6px;
   --radius-lg:  8px;
   --radius-xl: 12px;
+  --radius-pill: 999px;
 
   /* Dark theme (default) */
   --bg:        #0f1117;
@@ -46,11 +51,19 @@
 
   --text-1: #e2e8f0;
   --text-2: #a0aec0;
-  --text-3: #718096;
-  --text-4: #4a5568;
+  --text-3: #8a98ad;   /* clears 4.5:1 on --bg-card */
+  --text-4: #6b7688;   /* clears AA for real text on dark surfaces */
 
-  --accent:       #667eea;
-  --accent-hover: #5a67d8;
+  /* Brighter accent for text/borders on dark backgrounds */
+  --accent:       #818cf8;
+  /* Darker accent used as a BUTTON FILL (white text passes 4.5:1) */
+  --accent-fill:  #5a67d8;
+  --accent-hover: #4c51bf;
+  --on-accent:    #fff;
+
+  /* Semantic status colours (used by chips, badges, status tabs) */
+  --success-fg: #34d399; --success-bg: rgba(34,197,94,0.12);  --success-border: rgba(34,197,94,0.28);
+  --warn-accent-fg: #fbbf24; --warn-accent-bg: rgba(245,158,11,0.12); --warn-accent-border: rgba(245,158,11,0.28);
 
   /* Language match */
   --good-text:  #68d391; --good-bg:  #162a20; --good-border:  #2a5a3a;
@@ -76,10 +89,15 @@
   --text-1: #1a202c;
   --text-2: #2d3748;
   --text-3: #4a5568;
-  --text-4: #718096;
+  --text-4: #5d6b7d;   /* raised to clear AA for real text on light surfaces */
 
   --accent:       #5a67d8;
+  --accent-fill:  #5a67d8;
   --accent-hover: #4c51bf;
+  --on-accent:    #fff;
+
+  --success-fg: #15803d; --success-bg: rgba(34,197,94,0.10);  --success-border: #9ae6b4;
+  --warn-accent-fg: #b45309; --warn-accent-bg: rgba(245,158,11,0.10); --warn-accent-border: #fdba74;
 
   --good-text:  #276749; --good-bg:  #f0fff4; --good-border:  #9ae6b4;
   --maybe-text: #744210; --maybe-bg: #fffbeb; --maybe-border: #f6ad55;
@@ -94,16 +112,15 @@
 /* ─── Reset & base ───────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { font-size: var(--text-base); }
-
 body {
   background: var(--bg);
   color: var(--text-1);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   font-size: var(--text-base);
   font-weight: var(--weight-normal);
   line-height: var(--leading-normal);
   transition: background 0.2s, color 0.2s;
+  -webkit-font-smoothing: antialiased;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -114,6 +131,90 @@ button { cursor: pointer; font: inherit; }
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+/* Visually-hidden but reachable by screen readers / keyboard */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link — visible only when focused */
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -48px;
+  z-index: 1000;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  color: var(--text-1);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  transition: top 0.15s ease;
+}
+.skip-link:focus { top: var(--space-2); }
+
+/* ─── Button + select base (shared component primitives) ─────────────
+   .btn is the canonical control; --primary/--secondary/--ghost are the
+   three fills. Existing bespoke button classes are kept for now, but new
+   UI should reach for these. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  padding: var(--space-2) var(--space-4);
+  line-height: 1.2;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--primary {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+.btn--primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn--secondary {
+  background: var(--bg-chip);
+  border-color: var(--border);
+  color: var(--text-2);
+}
+.btn--secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--text-1); }
+.btn--ghost {
+  background: none;
+  border-color: var(--border);
+  color: var(--text-3);
+}
+.btn--ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--text-1); }
+
+.select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-1);
+  padding: var(--space-2) 32px var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b9bb4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 10px 6px;
+}
+[data-theme="light"] .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23445577'/%3E%3C/svg%3E");
 }
 
 /* ─── Layout ─────────────────────────────────────────────────────── */
@@ -133,10 +234,12 @@ button { cursor: pointer; font: inherit; }
   z-index: 50;
 }
 .navbar-brand {
+  font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: var(--weight-bold);
   color: var(--text-1);
   line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
 }
 .navbar-brand:hover { color: var(--text-1); }
 .navbar-sub {
@@ -277,14 +380,14 @@ button { cursor: pointer; font: inherit; }
 }
 .sort-pill:hover { color: var(--text-1); border-color: var(--accent); }
 .sort-pill.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-accent);
 }
 .sort-select {
   font-size: var(--text-sm);
   padding: 4px var(--space-3);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-input);
   color: var(--text-1);
@@ -304,13 +407,17 @@ button { cursor: pointer; font: inherit; }
 .sort-strong input { accent-color: var(--accent); cursor: pointer; }
 
 /* ─── Job card ───────────────────────────────────────────────────── */
+.job-card-wrap { margin-bottom: var(--space-2); }
+.job-card-credit {
+  padding: var(--space-1) var(--space-4) 0;
+  font-size: var(--text-xs);
+}
 .job-card {
   display: block;                /* <Link> is inline by default */
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  margin-bottom: var(--space-2);
   transition: border-color 0.15s, box-shadow 0.15s;
   color: var(--text-1);
 }
@@ -348,22 +455,14 @@ button { cursor: pointer; font: inherit; }
   white-space: nowrap;
 }
 .cv-score-badge.high {
-  background: rgba(34, 197, 94, 0.12);
-  color: #22c55e;
-  border: 1px solid rgba(34, 197, 94, 0.22);
+  background: var(--success-bg);
+  color: var(--success-fg);
+  border: 1px solid var(--success-border);
 }
 .cv-score-badge.mid {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.22);
-}
-[data-theme="light"] .cv-score-badge.high {
-  background: rgba(34, 197, 94, 0.1);
-  color: #16a34a;
-}
-[data-theme="light"] .cv-score-badge.mid {
-  background: rgba(245, 158, 11, 0.1);
-  color: #b45309;
+  background: var(--warn-accent-bg);
+  color: var(--warn-accent-fg);
+  border: 1px solid var(--warn-accent-border);
 }
 .job-title {
   font-size: var(--text-md);
@@ -505,10 +604,12 @@ button { cursor: pointer; font: inherit; }
 
 .detail-header { margin-bottom: var(--space-3); }
 .detail-title {
-  font-size: var(--text-lg);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
   color: var(--text-1);
   line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
   margin-bottom: var(--space-2);
 }
 .detail-company {
@@ -557,26 +658,22 @@ button { cursor: pointer; font: inherit; }
   font-weight: var(--weight-medium);
 }
 .skill-chip.match {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.28);
-  color: #22c55e;
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success-fg);
 }
 .skill-chip.gap {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.28);
-  color: #f59e0b;
+  background: var(--warn-accent-bg);
+  border-color: var(--warn-accent-border);
+  color: var(--warn-accent-fg);
 }
-[data-theme="light"] .skill-chip.match { color: #16a34a; }
-[data-theme="light"] .skill-chip.gap { color: #b45309; }
 
 /* ─── CV ↔ job skill gap ─────────────────────────────────────────── */
 .skillgap { display: flex; flex-direction: column; gap: var(--space-3); }
 .skillgap-row { display: flex; flex-direction: column; gap: var(--space-2); }
 .skillgap-label { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
-.skillgap-label.match { color: #22c55e; }
-.skillgap-label.gap { color: #f59e0b; }
-[data-theme="light"] .skillgap-label.match { color: #16a34a; }
-[data-theme="light"] .skillgap-label.gap { color: #b45309; }
+.skillgap-label.match { color: var(--success-fg); }
+.skillgap-label.gap { color: var(--warn-accent-fg); }
 
 /* ─── Application funnel ─────────────────────────────────────────── */
 .funnel {
@@ -607,8 +704,12 @@ button { cursor: pointer; font: inherit; }
   font: inherit;
 }
 .analyze-text { resize: vertical; min-height: 180px; line-height: 1.5; }
-.analyze-title:focus,
-.analyze-text:focus { outline: none; border-color: var(--accent); }
+.analyze-title:focus-visible,
+.analyze-text:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-color: var(--accent);
+}
 .analyze-form .apply-btn { align-self: flex-start; }
 .analyze-result { margin-top: var(--space-5); }
 .analyze-gap-note { font-size: var(--text-xs); color: var(--text-3); margin-top: var(--space-2); }
@@ -629,7 +730,7 @@ button { cursor: pointer; font: inherit; }
   transition: all 0.15s ease;
 }
 .smart-toggle:hover { color: var(--text-1); border-color: var(--accent); }
-.smart-toggle.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.smart-toggle.is-active { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--on-accent); }
 
 /* ─── Similar roles ──────────────────────────────────────────────── */
 .similar-list { display: flex; flex-direction: column; gap: var(--space-2); }
@@ -679,7 +780,7 @@ button { cursor: pointer; font: inherit; }
   white-space: pre-wrap;
   line-height: 1.5;
 }
-.chat-msg.user .chat-bubble { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chat-msg.user .chat-bubble { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--on-accent); }
 .chat-refs { display: flex; flex-direction: column; gap: 4px; }
 .chat-ref {
   font-size: var(--text-sm);
@@ -736,10 +837,10 @@ button { cursor: pointer; font: inherit; }
 }
 .state-msg { font-size: var(--text-sm); margin-bottom: var(--space-3); max-width: 420px; margin-left: auto; margin-right: auto; }
 .state-action {
-  background: var(--accent);
+  background: var(--accent-fill);
   border: none;
   border-radius: var(--radius-md);
-  color: #fff;
+  color: var(--on-accent);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   padding: var(--space-2) var(--space-4);
@@ -803,8 +904,29 @@ button { cursor: pointer; font: inherit; }
   /* Conversational + banner surfaces go full width */
   .chat-msg { max-width: 100%; }
   .cv-banner { flex-direction: column; align-items: flex-start; }
-  .funnel-row { gap: var(--space-2); }
   .analyze-form { max-width: 100%; }
+
+  /* Funnel stacks vertically with a downward separator */
+  .funnel-row {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .funnel-stage { min-width: 0; }
+  .funnel-arrow { transform: rotate(90deg); }
+}
+
+/* Intermediate (tablet): the 5 filter selects overflow between 641–820px.
+   Lay the filter row out as a 2-column grid and shrink the select floor. */
+@media (max-width: 820px) and (min-width: 641px) {
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+  }
+  .filter-group.search-group { grid-column: 1 / -1; }
+  .filters select { min-width: 120px; }
+  .filter-clear { grid-column: 1 / -1; }
 }
 
 /* Coarse-pointer (touch): larger tap targets */
@@ -814,6 +936,29 @@ button { cursor: pointer; font: inherit; }
   .smart-toggle,
   .status-tab,
   .filter-clear { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+
+  /* Icon / text-only buttons that ship with padding:0 — give them a real target */
+  .help-btn,
+  .app-delete-btn,
+  .rag-cv-remove,
+  .back-btn,
+  .expand-btn,
+  .rag-copy-btn {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Even on a fine pointer these small controls need a usable hit area */
+.help-btn,
+.app-delete-btn,
+.rag-cv-remove,
+.rag-copy-btn {
+  min-height: 24px;
+  min-width: 24px;
 }
 
 /* Respect reduced-motion for the interactive graph + transitions */
@@ -865,8 +1010,8 @@ button { cursor: pointer; font: inherit; }
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--on-accent);
   border: none;
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-5);
@@ -874,7 +1019,7 @@ button { cursor: pointer; font: inherit; }
   font-weight: var(--weight-semibold);
   transition: background 0.15s;
 }
-.apply-btn:hover { background: var(--accent-hover); color: #fff; }
+.apply-btn:hover { background: var(--accent-hover); color: var(--on-accent); }
 
 .detail-cta {
   display: flex;
@@ -963,9 +1108,9 @@ button { cursor: pointer; font: inherit; }
 }
 .tour-btn:hover { border-color: var(--text-3); }
 .tour-btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-accent);
   font-weight: var(--weight-medium);
 }
 .tour-btn-primary:hover { background: var(--accent-hover); }
@@ -1101,6 +1246,7 @@ button { cursor: pointer; font: inherit; }
   margin-bottom: var(--space-4);
 }
 .page-title {
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
   color: var(--text-1);
@@ -1128,9 +1274,9 @@ button { cursor: pointer; font: inherit; }
 }
 .status-tab:hover { color: var(--text-1); }
 .status-tab.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-accent);
 }
 .tab-count {
   background: rgba(255,255,255,.2);
@@ -1154,7 +1300,7 @@ button { cursor: pointer; font: inherit; }
   gap: var(--space-4);
   flex-wrap: wrap;
 }
-.app-row:hover { border-color: var(--border-focus); }
+.app-row:hover { border-color: var(--accent); }
 
 .app-row-main { flex: 1; min-width: 0; }
 .app-job-title {
@@ -1207,6 +1353,34 @@ button { cursor: pointer; font: inherit; }
 .status-select:focus-visible,
 .status-select-inline:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
 
+/* Colour-code the application status select by its current value */
+.status-select.status-offer {
+  color: var(--success-fg);
+  border-color: var(--success-border);
+  background: var(--success-bg);
+}
+.status-select.status-interview {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg-input);
+}
+.status-select.status-applied {
+  color: var(--text-1);
+  border-color: var(--text-3);
+}
+.status-select.status-rejected {
+  color: var(--block-text);
+  border-color: var(--block-border);
+  background: var(--block-bg);
+}
+.status-select.status-need-cv {
+  color: var(--warn-accent-fg);
+  border-color: var(--warn-accent-border);
+  background: var(--warn-accent-bg);
+}
+.status-select.status-archived { color: var(--text-3); opacity: 0.8; }
+/* .status-saved keeps the neutral default */
+
 /* Save button on Job Detail */
 .save-btn {
   background: var(--bg-chip);
@@ -1225,24 +1399,58 @@ button { cursor: pointer; font: inherit; }
   height: auto;
   max-height: 72vh;
   display: block;
-  touch-action: none;   /* dragging a bubble must not scroll the page */
   user-select: none;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+/* Only suppress page scroll where a precise pointer is used (mouse/trackpad).
+   On touch, allow the page to scroll; pointer-capture still drives the drag. */
+@media (pointer: fine) {
+  .skill-graph { touch-action: none; }
+}
 .skill-node { cursor: grab; }
 .skill-node:active { cursor: grabbing; }
 .skill-node-circle {
-  fill: var(--accent);
-  stroke: var(--accent);
+  fill: var(--accent-fill);
+  stroke: var(--accent-fill);
   stroke-width: 1.5;
   transition: stroke-width 0.15s;
 }
 .skill-node:hover .skill-node-circle { stroke-width: 3; }
 .skill-node-label {
-  fill: #fff;
+  fill: var(--on-accent);
   font-weight: var(--weight-semibold);
   text-anchor: middle;
   pointer-events: none;
+}
+
+/* Accessible text alternative to the bubble graph */
+.skill-table-section { margin-top: var(--space-6); }
+.skill-table { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
+.skill-table-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 2fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-1);
+}
+.skill-table-name { font-weight: var(--weight-medium); }
+.skill-table-bar {
+  height: 8px;
+  background: var(--bg-chip);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.skill-table-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent-fill);
+  border-radius: var(--radius-pill);
+}
+.skill-table-pct { color: var(--text-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .skill-table-row { grid-template-columns: 1fr auto; }
+  .skill-table-bar { display: none; }
 }

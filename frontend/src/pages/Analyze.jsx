@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
+import { usePageTitle, SkipLink } from "../components/PageChrome.jsx";
 
 function CvBadge({ score }) {
   if (score == null) return null;
@@ -14,6 +15,7 @@ export default function Analyze() {
   const [loading, setLoading] = useState(false);
   const [result, setResult]   = useState(null);
   const [error, setError]     = useState(null);
+  usePageTitle("Analyze");
 
   async function run() {
     setLoading(true);
@@ -39,8 +41,9 @@ export default function Analyze() {
 
   return (
     <div>
+      <SkipLink />
       <Navbar />
-      <div className="page">
+      <main id="main" className="page">
         <div className="page-header">
           <h1 className="page-title">Analyze a job</h1>
         </div>
@@ -72,10 +75,11 @@ export default function Analyze() {
           >
             {loading ? "Analyzing…" : "Analyze"}
           </button>
+          <span className="sr-only" role="status">{loading ? "Analyzing the job description" : ""}</span>
         </div>
 
         {error && (
-          <div className="error-msg" style={{ marginTop: "var(--space-3)" }}>{error}</div>
+          <div className="error-msg" role="alert" style={{ marginTop: "var(--space-3)" }}>{error}</div>
         )}
 
         {c && (
@@ -102,7 +106,7 @@ export default function Analyze() {
 
             {(c.required_languages?.length > 0 || c.optional_languages?.length > 0) && (
               <div className="detail-section">
-                <div className="detail-section-title">Language requirements</div>
+                <h2 className="detail-section-title">Language requirements</h2>
                 <div className="lang-list">
                   {c.required_languages.map((l) => (
                     <div key={l} className="lang-item required">✗ Required: {l}</div>
@@ -116,7 +120,7 @@ export default function Analyze() {
 
             {result.skills.length > 0 && (
               <div className="detail-section">
-                <div className="detail-section-title">Detected skills</div>
+                <h2 className="detail-section-title">Detected skills</h2>
                 <div className="skills-grid">
                   {result.skills.map((s) => {
                     const has = result.cv.has_cv && result.cv.matched.includes(s);
@@ -141,7 +145,7 @@ export default function Analyze() {
             )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

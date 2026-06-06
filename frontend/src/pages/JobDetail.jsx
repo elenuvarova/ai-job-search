@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar.jsx";
 import LanguageBadge from "../components/LanguageBadge.jsx";
 import SourceCredit from "../components/SourceCredit.jsx";
 import { SkeletonFeed, ErrorState } from "../components/States.jsx";
+import { usePageTitle, SkipLink } from "../components/PageChrome.jsx";
 
 const COUNTRY_FLAGS = {
   BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺",
@@ -122,7 +123,7 @@ function RagPanel({ jobId }) {
 
   return (
     <div className="detail-section">
-      <div className="detail-section-title">AI Assistant</div>
+      <h2 className="detail-section-title">AI Assistant</h2>
 
       {!cv ? (
         <div className="rag-upload-prompt">
@@ -135,12 +136,14 @@ function RagPanel({ jobId }) {
               ref={fileRef}
               type="file"
               accept=".pdf,.docx"
+              aria-label="Upload CV (PDF or DOCX)"
               onChange={handleUpload}
               disabled={uploading}
               hidden
             />
           </label>
-          {uploadError && <div className="inline-error">{uploadError}</div>}
+          <span className="sr-only" role="status">{uploading ? "Analysing CV" : ""}</span>
+          {uploadError && <div className="inline-error" role="alert">{uploadError}</div>}
         </div>
       ) : (
         <div>
@@ -162,7 +165,12 @@ function RagPanel({ jobId }) {
             ))}
           </div>
 
-          {ragError && <div className="error-msg" style={{ marginTop: "var(--space-3)" }}>{ragError}</div>}
+          {/* Announce generation progress / completion to assistive tech */}
+          <div className="sr-only" role="status">
+            {ragLoading ? "Generating, please wait" : ragResult ? "Result ready" : ""}
+          </div>
+
+          {ragError && <div className="error-msg" role="alert" style={{ marginTop: "var(--space-3)" }}>{ragError}</div>}
 
           {ragResult && (
             <div className="rag-result">
@@ -175,6 +183,7 @@ function RagPanel({ jobId }) {
                   <button className="rag-copy-btn" onClick={downloadResult}>
                     Download
                   </button>
+                  <span className="sr-only" role="status">{copied ? "Copied to clipboard" : ""}</span>
                 </span>
               </div>
               <pre className="rag-result-text">{ragResult}</pre>
@@ -259,7 +268,7 @@ function SkillGap({ jobId }) {
 
   return (
     <div className="detail-section">
-      <div className="detail-section-title">Your CV vs this job</div>
+      <h2 className="detail-section-title">Your CV vs this job</h2>
       <div className="skillgap">
         {data.matched.length > 0 && (
           <div className="skillgap-row">
@@ -310,14 +319,14 @@ function CompanyBrief({ jobId, company }) {
 
   return (
     <div className="detail-section">
-      <div className="detail-section-title">Company brief</div>
+      <h2 className="detail-section-title">Company brief</h2>
       {!brief && !loading && (
         <button className="rag-action-btn" onClick={generate}>
           🏢 Brief me on {company}
         </button>
       )}
-      {loading && <div className="status-msg">Researching {company}…</div>}
-      {error && <div className="error-msg" style={{ marginTop: "var(--space-3)" }}>{error}</div>}
+      {loading && <div className="status-msg" role="status">Researching {company}…</div>}
+      {error && <div className="error-msg" role="alert" style={{ marginTop: "var(--space-3)" }}>{error}</div>}
       {brief && <pre className="rag-result-text">{brief}</pre>}
     </div>
   );
@@ -337,7 +346,7 @@ function SimilarJobs({ jobId }) {
 
   return (
     <div className="detail-section">
-      <div className="detail-section-title">Similar roles</div>
+      <h2 className="detail-section-title">Similar roles</h2>
       <div className="similar-list">
         {jobs.map((j) => (
           <Link key={j.id} to={`/jobs/${j.id}`} className="similar-item">
@@ -379,11 +388,13 @@ export default function JobDetail() {
       .finally(() => setLoading(false));
   }, [id, reloadKey]);
 
+  usePageTitle(job ? job.title : "Job");
+
   if (loading) {
     return (
       <>
         <Navbar />
-        <div className="page" style={{ paddingTop: "1.5rem" }}><SkeletonFeed rows={3} /></div>
+        <main id="main" className="page" style={{ paddingTop: "1.5rem" }}><SkeletonFeed rows={3} /></main>
       </>
     );
   }
@@ -391,9 +402,9 @@ export default function JobDetail() {
     return (
       <>
         <Navbar />
-        <div className="page" style={{ paddingTop: "1.5rem" }}>
+        <main id="main" className="page" style={{ paddingTop: "1.5rem" }}>
           <ErrorState message={error} onRetry={() => setReloadKey((k) => k + 1)} />
-        </div>
+        </main>
       </>
     );
   }
@@ -407,16 +418,17 @@ export default function JobDetail() {
 
   return (
     <div>
+      <SkipLink />
       <Navbar />
 
-      <div className="page">
+      <main id="main" className="page">
         <button className="back-btn" onClick={backToJobs}>
           ← Back to jobs
         </button>
 
         {/* Header */}
         <div className="detail-header">
-          <div className="detail-title">{job.title}</div>
+          <h1 className="detail-title">{job.title}</h1>
           <div className="detail-company">
             {job.company}
             {job.location_raw && (
@@ -456,7 +468,7 @@ export default function JobDetail() {
         {/* Language requirements */}
         {showLangBlock && (
           <div className="detail-section">
-            <div className="detail-section-title">Language requirements</div>
+            <h2 className="detail-section-title">Language requirements</h2>
             <div className="lang-list">
               {requiredLangs.map((l) => (
                 <div key={l} className="lang-item required">✗ Required: {l}</div>
@@ -469,7 +481,7 @@ export default function JobDetail() {
         )}
         {!showLangBlock && c && (
           <div className="detail-section">
-            <div className="detail-section-title">Language requirements</div>
+            <h2 className="detail-section-title">Language requirements</h2>
             <div className="lang-list">
               <div className="lang-item ok">✓ English only — no local language required</div>
             </div>
@@ -479,7 +491,7 @@ export default function JobDetail() {
         {/* Skills */}
         {skills.length > 0 && (
           <div className="detail-section">
-            <div className="detail-section-title">Detected skills</div>
+            <h2 className="detail-section-title">Detected skills</h2>
             <div className="skills-grid">
               {skills.map((s) => (
                 <span key={s.skill} className="skill-chip">{s.skill}</span>
@@ -494,7 +506,7 @@ export default function JobDetail() {
         {/* Description — expandable */}
         {job.description && (
           <div className="detail-section">
-            <div className="detail-section-title">Job description</div>
+            <h2 className="detail-section-title">Job description</h2>
             <div className={`description-box ${expanded ? "expanded" : ""}`}>
               {job.description}
             </div>
@@ -522,7 +534,7 @@ export default function JobDetail() {
             <ApplyButton url={job.apply_url} />
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

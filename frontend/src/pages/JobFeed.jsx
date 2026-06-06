@@ -5,6 +5,7 @@ import LanguageBadge from "../components/LanguageBadge.jsx";
 import SourceCredit from "../components/SourceCredit.jsx";
 import Tour, { shouldShowTour } from "../components/Tour.jsx";
 import { SkeletonFeed, ErrorState, EmptyState } from "../components/States.jsx";
+import { usePageTitle, SkipLink } from "../components/PageChrome.jsx";
 
 const COUNTRY_FLAGS = {
   BE: "🇧🇪", NL: "🇳🇱", LU: "🇱🇺",
@@ -51,18 +52,22 @@ function CvUploadBanner({ onUploaded }) {
       <span className="cv-banner-text">
         📄 Upload your CV to rank every job by how well it matches you.
       </span>
-      {error && <div className="inline-error">{error}</div>}
+      {error && <div className="inline-error" role="alert">{error}</div>}
       <label className="rag-upload-btn">
         {uploading ? "Analysing CV…" : "Upload CV (PDF or DOCX)"}
         <input
           ref={fileRef}
           type="file"
           accept=".pdf,.docx"
+          aria-label="Upload CV (PDF or DOCX)"
           onChange={handle}
           disabled={uploading}
           hidden
         />
       </label>
+      <span className="sr-only" role="status">
+        {uploading ? "Analysing CV" : ""}
+      </span>
     </div>
   );
 }
@@ -76,51 +81,60 @@ function CvScoreBadge({ score }) {
 function JobCard({ job, isFirst, cvScore }) {
   const c = job.JobClassification;
   return (
-    <Link
-      to={`/jobs/${job.id}`}
-      className="job-card"
-      data-tour={isFirst ? "first-card" : undefined}
-    >
-      <div className="job-card-top">
-        <div className="job-title">{job.title}</div>
-        <div className="job-card-badges">
-          <CvScoreBadge score={cvScore} />
-          <span data-tour={isFirst ? "lang-badge" : undefined}>
-            <LanguageBadge match={c?.language_match} />
-          </span>
+    <div className="job-card-wrap">
+      <Link
+        to={`/jobs/${job.id}`}
+        className="job-card"
+        aria-label={`${job.title} at ${job.company}`}
+        data-tour={isFirst ? "first-card" : undefined}
+      >
+        <div className="job-card-top">
+          <div className="job-title">{job.title}</div>
+          <div className="job-card-badges">
+            <CvScoreBadge score={cvScore} />
+            <span data-tour={isFirst ? "lang-badge" : undefined}>
+              <LanguageBadge match={c?.language_match} />
+            </span>
+          </div>
         </div>
-      </div>
 
-      <div className="job-meta">
-        {job.company && <span>{job.company}</span>}
-        {job.location_raw && (
-          <span>{COUNTRY_FLAGS[job.country] || ""} {job.location_raw}</span>
-        )}
-      </div>
+        <div className="job-meta">
+          {job.company && <span>{job.company}</span>}
+          {job.location_raw && (
+            <span>{COUNTRY_FLAGS[job.country] || ""} {job.location_raw}</span>
+          )}
+        </div>
 
-      <div className="job-chips">
-        {c?.role_family && c.role_family !== "Other / Unclear" && (
-          <span className="chip">{c.role_family}</span>
-        )}
-        {c?.seniority && c.seniority !== "unknown" && (
-          <span className="chip">{c.seniority}</span>
-        )}
-        {c?.employment_type && c.employment_type !== "unclear" && (
-          <span className="chip">{c.employment_type.replace("_", "-")}</span>
-        )}
-        {c?.remote_type && c.remote_type !== "unknown" && (
-          <span className="chip">{c.remote_type}</span>
-        )}
-        {c?.job_post_language && c.job_post_language !== "english" && (
-          <span className="chip chip--warn">posted in {c.job_post_language}</span>
-        )}
-      </div>
+        <div className="job-chips">
+          {c?.role_family && c.role_family !== "Other / Unclear" && (
+            <span className="chip">{c.role_family}</span>
+          )}
+          {c?.seniority && c.seniority !== "unknown" && (
+            <span className="chip">{c.seniority}</span>
+          )}
+          {c?.employment_type && c.employment_type !== "unclear" && (
+            <span className="chip">{c.employment_type.replace("_", "-")}</span>
+          )}
+          {c?.remote_type && c.remote_type !== "unknown" && (
+            <span className="chip">{c.remote_type}</span>
+          )}
+          {c?.job_post_language && c.job_post_language !== "english" && (
+            <span className="chip chip--warn">posted in {c.job_post_language}</span>
+          )}
+        </div>
 
-      <div className="job-footer">
-        <span>{relativeTime(job.posted_at)}</span>
-        <SourceCredit source={job.Source} />
-      </div>
-    </Link>
+        <div className="job-footer">
+          <span>{relativeTime(job.posted_at)}</span>
+        </div>
+      </Link>
+
+      {/* Source credit is its own link — kept OUT of the card <Link> (no nested anchors) */}
+      {job.Source && (
+        <div className="job-card-credit">
+          <SourceCredit source={job.Source} />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -133,6 +147,7 @@ export default function JobFeed() {
   const [hasCv, setHasCv]     = useState(null); // null=unknown, false=none, true=yes
   const [scores, setScores]   = useState({});
   const [reloadKey, setReloadKey] = useState(0);
+  usePageTitle("Jobs");
 
   const q          = searchParams.get("q")              || "";
   const country    = searchParams.get("country")        || "";
@@ -258,12 +273,14 @@ export default function JobFeed() {
 
   return (
     <div>
+      <SkipLink />
       <Navbar
         sub="ML · Data Science · AI Engineering"
         onHelpClick={() => setShowTour(true)}
       />
 
-      <div className="page">
+      <main id="main" className="page">
+        <h1 className="sr-only">Jobs</h1>
         {/* Filter bar */}
         <div className="filters" data-tour="filters">
           <div className="filter-group search-group">
@@ -396,18 +413,20 @@ export default function JobFeed() {
           </div>
         )}
 
-        {/* Stats */}
-        {result && (
-          <div className="feed-stats">
-            <strong>{result.total}</strong> jobs
-            {langMatch === "good" && " · English-friendly"}
-            {country && ` · ${country}`}
-            {result.sort === "match" &&
-              (result.capped ? " · ranked the 600 most recent by CV match" : " · sorted by CV match")}
-            {result.semantic && " · ✨ semantic"}
-            {result.pages > 1 && ` · page ${page} of ${result.pages}`}
-          </div>
-        )}
+        {/* Stats — aria-live so the result count is announced on filter/sort */}
+        <div className="feed-stats" aria-live="polite">
+          {result && (
+            <>
+              <strong>{result.total}</strong> jobs
+              {langMatch === "good" && " · English-friendly"}
+              {country && ` · ${country}`}
+              {result.sort === "match" &&
+                (result.capped ? " · ranked the 600 most recent by CV match" : " · sorted by CV match")}
+              {result.semantic && " · ✨ semantic"}
+              {result.pages > 1 && ` · page ${page} of ${result.pages}`}
+            </>
+          )}
+        </div>
 
         {result?.semantic && result?.note && (
           <div className="status-msg">{result.note}</div>
@@ -445,7 +464,7 @@ export default function JobFeed() {
             </button>
           </div>
         )}
-      </div>
+      </main>
 
       {showTour && <Tour onDone={() => setShowTour(false)} />}
     </div>

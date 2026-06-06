@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const STORAGE_KEY = "scout_tour_done";
 
@@ -32,6 +32,8 @@ const STEPS = [
 
 export default function Tour({ onDone }) {
   const [step, setStep] = useState(0);
+  const panelRef = useRef(null);
+  const triggerRef = useRef(null); // element focused before the tour opened
 
   const highlight = useCallback((targetSelector) => {
     // Remove previous highlight
@@ -56,7 +58,43 @@ export default function Tour({ onDone }) {
     highlight(null);
     localStorage.setItem(STORAGE_KEY, "1");
     onDone();
+    // Restore focus to the "? Tour" trigger (the canonical opener) AFTER React
+    // has unmounted the dialog, so the focus call isn't undone.
+    const back = document.getElementById("tour-trigger") || triggerRef.current;
+    requestAnimationFrame(() => back?.focus?.());
   }, [highlight, onDone]);
+
+  // On open: remember the trigger, move focus into the panel, and trap Tab.
+  useEffect(() => {
+    triggerRef.current = document.activeElement;
+    const panel = panelRef.current;
+    panel?.querySelector(".tour-btn-primary")?.focus();
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        finish();
+        return;
+      }
+      if (e.key !== "Tab" || !panel) return;
+      const focusable = panel.querySelectorAll(
+        'button, a[href], input, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [finish]);
 
   const next = () => {
     if (step < STEPS.length - 1) setStep((s) => s + 1);
@@ -68,14 +106,20 @@ export default function Tour({ onDone }) {
   const current = STEPS[step];
 
   return (
-    <div className="tour-panel" role="dialog" aria-label="Product tour">
-      <div className="tour-dots">
+    <div
+      className="tour-panel"
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tour-title"
+    >
+      <div className="tour-dots" aria-hidden="true">
         {STEPS.map((_, i) => (
           <div key={i} className={`tour-dot ${i === step ? "active" : ""}`} />
         ))}
       </div>
 
-      <div className="tour-title">{current.title}</div>
+      <h2 id="tour-title" className="tour-title">{current.title}</h2>
       <div className="tour-body">{current.body}</div>
 
       <div className="tour-actions">
