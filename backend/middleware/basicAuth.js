@@ -8,10 +8,10 @@
 //   - /api/health is exempt so the container HEALTHCHECK (wget /api/health)
 //     keeps passing even before/without credentials. Without this, Coolify
 //     marks the app unhealthy and recycles it.
-//   - If BASIC_AUTH_USER or BASIC_AUTH_PASSWORD is unset/empty: in development we
-//     fail OPEN (next() straight through) for convenience; in PRODUCTION we fail
-//     CLOSED (503 for everything except /api/health) so a missing/typo'd env var
-//     can never silently publish the CV/application PII and LLM endpoints.
+//   - If BASIC_AUTH_USER or BASIC_AUTH_PASSWORD is unset/empty, auth is DISABLED
+//     (next() straight through) and the site is PUBLIC. Setting both env vars
+//     puts the whole app behind a single Basic Auth login. The app is intended
+//     to be publicly reachable, so the default (no creds) is open by design.
 //   - Otherwise: parse "Authorization: Basic <base64(user:pass)>", compare in
 //     constant time, and on any failure return 401 with a WWW-Authenticate
 //     header so the browser shows its native login prompt.
@@ -62,22 +62,11 @@ export function basicAuth(req, res, next) {
   const expectedUser = process.env.BASIC_AUTH_USER || "";
   const expectedPass = process.env.BASIC_AUTH_PASSWORD || "";
 
-  // Health check must always stay reachable without credentials for the
-  // container HEALTHCHECK — even when auth is unconfigured.
-  if (req.path === "/api/health") return next();
+  // No credentials configured: auth is disabled and the site is public.
+  if (!expectedUser || !expectedPass) return next();
 
-  // No credentials configured. Fail closed in production, open in dev.
-  if (!expectedUser || !expectedPass) {
-    if (process.env.NODE_ENV === "production") {
-      console.error(
-        "[auth] BASIC_AUTH_USER/PASSWORD not set in production — refusing requests (fail-closed)."
-      );
-      return res
-        .status(503)
-        .send("Service unavailable: authentication is not configured.");
-    }
-    return next();
-  }
+  // Health check stays reachable without credentials for the HEALTHCHECK.
+  if (req.path === "/api/health") return next();
 
   const creds = parseBasicAuth(req.headers.authorization);
   if (!creds) return challenge(res);
