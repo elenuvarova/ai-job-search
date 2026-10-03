@@ -14,10 +14,15 @@ const upload = multer({
   },
 });
 
-// GET /api/cv — get current (latest) CV document
+// GET /api/cv — get current (latest) CV document.
+// Metadata only: the app is public, and the CV text carries personal data.
+// The frontend only needs id + label; scoring and RAG read raw_text server-side.
 router.get("/", async (_req, res) => {
   try {
-    const doc = await CvDocument.findOne({ order: [["created_at", "DESC"]] });
+    const doc = await CvDocument.findOne({
+      order: [["created_at", "DESC"]],
+      attributes: { exclude: ["raw_text"] },
+    });
     res.json(doc || null);
   } catch (err) {
     console.error("[cv] get current failed:", err);
