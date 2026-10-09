@@ -40,9 +40,10 @@ app.use(
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         // Scripts stay strictly 'self' — the pre-paint theme init is an external
         // /theme-init.js file, and Vite bundles are hashed/external. No inline scripts.
-        scriptSrc: ["'self'"],
+        // stats.ontwrpn.com = self-hosted Umami (page views only): script + beacon.
+        scriptSrc: ["'self'", "https://stats.ontwrpn.com"],
         imgSrc: ["'self'", "data:"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", "https://stats.ontwrpn.com"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         frameAncestors: ["'self'"],
